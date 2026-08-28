@@ -387,7 +387,7 @@ pub async fn persist_and_research<S: EventStore>(
     Ok(())
 }
 
-fn queue_exp001_arms(
+pub fn queue_exp001_arms(
     runtime: &mut LiveResearchRuntime,
     snap: &TokenStateSnapshot,
     history: &[TokenStateSnapshot],
@@ -774,7 +774,7 @@ async fn persist_fill_attempt(
     .await
 }
 
-fn wall_clock_snap(
+pub fn wall_clock_snap(
     chain: Chain,
     token: &str,
     launchpad: Launchpad,
@@ -962,6 +962,23 @@ async fn flush_pending_paper(
             keep.push(p);
             continue;
         }
+        if let (Some(pg), Some(exp)) = (pg, p.experiment_id.as_deref()) {
+            if pg
+                .arm_entry_exists(exp, p.chain, &p.token, &p.arm_id)
+                .await
+                .unwrap_or(false)
+            {
+                runtime
+                    .entered_arms
+                    .insert((p.chain, p.token.clone(), p.arm_id.clone()));
+                tracing::info!(
+                    token = %p.token,
+                    arm = %p.arm_id,
+                    "skip BUY before persist: lifetime arm entry already claimed"
+                );
+                continue;
+            }
+        }
         let mut book = p.snaps.clone();
         {
             let g = state.lock().expect("state");
@@ -1100,8 +1117,8 @@ async fn flush_pending_paper(
                 "arm_id": p.arm_id,
                 "fail_class": if fill.status.is_fill() { serde_json::Value::Null } else { serde_json::Value::String(fail_class.into()) },
             });
-            buy_order_id = pg
-                .insert_paper_order_ex(
+            match pg
+                .insert_paper_order_claimed(
                     &p.arm_id,
                     p.chain,
                     &p.token,
@@ -1117,23 +1134,41 @@ async fn flush_pending_paper(
                     None,
                 )
                 .await
-                .ok();
-            if let Some(oid) = buy_order_id {
-                let _ = persist_fill_attempt(
-                    pg,
-                    Some(oid),
-                    p.attempts.max(1) as i32,
-                    &fill,
-                    p.experiment_id.as_deref(),
-                    None,
-                    p.chain,
-                    &p.token,
-                    "BUY",
-                    &runtime.cfg.quote_notional,
-                    curve_state.as_ref(),
-                    None,
-                )
-                .await;
+            {
+                Ok(Some(oid)) => {
+                    buy_order_id = Some(oid);
+                    let _ = persist_fill_attempt(
+                        pg,
+                        Some(oid),
+                        p.attempts.max(1) as i32,
+                        &fill,
+                        p.experiment_id.as_deref(),
+                        None,
+                        p.chain,
+                        &p.token,
+                        "BUY",
+                        &runtime.cfg.quote_notional,
+                        curve_state.as_ref(),
+                        None,
+                    )
+                    .await;
+                }
+                Ok(None) => {
+                    runtime
+                        .entered_arms
+                        .insert((p.chain, p.token.clone(), p.arm_id.clone()));
+                    tracing::info!(
+                        token = %p.token,
+                        arm = %p.arm_id,
+                        "skip duplicate BUY persist; lifetime arm already claimed"
+                    );
+                    continue;
+                }
+                Err(e) => {
+                    tracing::warn!(error = %e, token = %p.token, "entry order persist failed");
+                    keep.push(p);
+                    continue;
+                }
             }
         }
         match fill.status {
@@ -1171,26 +1206,40 @@ async fn flush_pending_paper(
                     .map(|s| s.state_quality.research_valid_live_paper())
                     .unwrap_or(false);
             runtime.next_pos += 1;
+            let mut persist_ok = true;
             if let Some(pg) = pg {
-                if let Ok(id) = persist_position(pg, &pos).await {
-                    pos.id = id;
-                    DiscoveryMetrics::paper_position(p.chain, p.launchpad);
-                    if let Some(ev) = pos.events.first() {
-                        let _ = pg
-                            .insert_position_event(
-                                id,
-                                ev.kind.as_str(),
-                                ev.at,
-                                serde_json::to_value(ev).unwrap_or(serde_json::json!({})),
-                            )
-                            .await;
+                match persist_position(pg, &pos).await {
+                    Ok(id) => {
+                        pos.id = id;
+                        DiscoveryMetrics::paper_position(p.chain, p.launchpad);
+                        if let Some(ev) = pos.events.first() {
+                            let _ = pg
+                                .insert_position_event(
+                                    id,
+                                    ev.kind.as_str(),
+                                    ev.at,
+                                    serde_json::to_value(ev).unwrap_or(serde_json::json!({})),
+                                )
+                                .await;
+                        }
+                        if let Some(oid) = buy_order_id {
+                            let _ = pg.attach_order_position(oid, id).await;
+                        }
                     }
-                    if let Some(oid) = buy_order_id {
-                        let _ = pg.attach_order_position(oid, id).await;
+                    Err(e) => {
+                        persist_ok = false;
+                        tracing::warn!(
+                            error = %e,
+                            token = %p.token,
+                            arm = %p.arm_id,
+                            "skip in-memory position; persist rejected (unique or storage)"
+                        );
                     }
                 }
             }
-            runtime.positions.push(pos);
+            if persist_ok {
+                runtime.positions.push(pos);
+            }
         }
     }
     runtime.pending = keep;
@@ -1237,8 +1286,8 @@ async fn record_failed_order(
             "arm_id": p.arm_id,
             "fail_class": cls,
         });
-        let _ = pg
-            .insert_paper_order(
+        match pg
+            .insert_paper_order_claimed(
                 &p.arm_id,
                 p.chain,
                 &p.token,
@@ -1249,8 +1298,25 @@ async fn record_failed_order(
                 p.feature_id,
                 p.sec_id,
                 payload,
+                p.experiment_id.as_deref(),
+                None,
+                None,
             )
-            .await;
+            .await
+        {
+            Ok(None) => {
+                runtime
+                    .entered_arms
+                    .insert((p.chain, p.token.clone(), p.arm_id.clone()));
+                tracing::info!(
+                    token = %p.token,
+                    arm = %p.arm_id,
+                    "skip duplicate failed BUY persist; lifetime arm already claimed"
+                );
+            }
+            Ok(Some(_)) => {}
+            Err(e) => tracing::warn!(error = %e, "failed BUY persist error"),
+        }
     }
 }
 
@@ -1266,6 +1332,10 @@ pub async fn restore_open_positions_prefixed(
     runtime: &mut LiveResearchRuntime,
     prefix: Option<&str>,
 ) -> Result<usize> {
+    if let Some(exp) = prefix {
+        restore_lifetime_arm_state(pg, runtime, exp).await?;
+        reconstruct_positions_from_orphan_entry_fills(pg, runtime, exp).await?;
+    }
     let rows = pg.load_open_paper_positions_prefixed(prefix).await?;
     let n = rows.len();
     for mut p in rows {
@@ -1279,10 +1349,92 @@ pub async fn restore_open_positions_prefixed(
             .entered_arms
             .insert((p.chain, p.token.clone(), p.strategy_policy_id.clone()));
         runtime.recovered += 1;
+        if runtime.positions.iter().any(|e| {
+            e.chain == p.chain && e.token == p.token && e.strategy_policy_id == p.strategy_policy_id
+        }) {
+            continue;
+        }
         if let Err(e) = pg.update_paper_position(&p).await {
             tracing::warn!(error = %e, "failed to reopen restored paper position");
         }
         runtime.positions.push(p);
+    }
+    Ok(n)
+}
+
+pub async fn restore_lifetime_arm_state(
+    pg: &PostgresStore,
+    runtime: &mut LiveResearchRuntime,
+    experiment_id: &str,
+) -> Result<usize> {
+    let _ = pg.ensure_arm_claims_from_evidence(experiment_id).await;
+    let keys = pg.load_lifetime_arm_entries(experiment_id).await?;
+    let n = keys.len();
+    for (chain, token, arm) in keys {
+        runtime.entered.insert((chain, token.clone()));
+        runtime.entered_arms.insert((chain, token, arm));
+    }
+    Ok(n)
+}
+
+async fn reconstruct_positions_from_orphan_entry_fills(
+    pg: &PostgresStore,
+    runtime: &mut LiveResearchRuntime,
+    experiment_id: &str,
+) -> Result<usize> {
+    let rows = pg.load_orphan_entry_fills(experiment_id).await?;
+    let mut n = 0usize;
+    for row in rows {
+        let fill_v = row
+            .payload
+            .get("result")
+            .cloned()
+            .unwrap_or_else(|| row.payload.clone());
+        let Ok(fill) = serde_json::from_value::<crate::sim::exec::ExecutionResult>(fill_v) else {
+            continue;
+        };
+        if !fill.status.is_fill() {
+            continue;
+        }
+        let mut pos = SimulatedPosition::open(
+            runtime.next_pos,
+            row.chain,
+            row.token.clone(),
+            Launchpad::PonsV2,
+            row.arm.clone(),
+            &fill,
+            row.feature_id,
+            row.sec_id,
+        );
+        runtime.next_pos += 1;
+        match persist_position(pg, &pos).await {
+            Ok(id) => {
+                pos.id = id;
+                let _ = pg.attach_order_position(row.order_id, id).await;
+                if let Some(ev) = pos.events.first() {
+                    let _ = pg
+                        .insert_position_event(
+                            id,
+                            ev.kind.as_str(),
+                            ev.at,
+                            serde_json::to_value(ev).unwrap_or(serde_json::json!({})),
+                        )
+                        .await;
+                }
+                runtime.entered.insert((row.chain, row.token.clone()));
+                runtime.entered_arms.insert((row.chain, row.token, row.arm));
+                runtime.positions.push(pos);
+                n += 1;
+            }
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    token = %row.token,
+                    arm = %row.arm,
+                    "orphan entry fill already has a position or persist failed"
+                );
+            }
+        }
     }
     Ok(n)
 }

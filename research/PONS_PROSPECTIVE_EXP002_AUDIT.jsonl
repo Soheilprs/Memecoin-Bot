@@ -1,0 +1,1 @@
+{"at":"2026-08-28T17:20:11Z","event":"EXPERIMENT_INVALIDATED","payload":{"id":"PONS_PROSPECTIVE_EXP002","reason":"RESTART_ENTRY_IDEMPOTENCY","rows_deleted":0,"started_at":"2026-08-28T16:57:22.682975595Z","start_block":48458553,"restarts":1,"preserve":["orders","fills","positions","events","intervals","four_duplicate_buy_fills"]}}

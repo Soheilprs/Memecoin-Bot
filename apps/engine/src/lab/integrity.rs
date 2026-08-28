@@ -46,6 +46,8 @@ pub struct IntegrityReport {
     pub partial_exit_fills: i64,
     #[serde(default)]
     pub failed_exit_attempts: i64,
+    #[serde(default)]
+    pub duplicate_entry_fills: i64,
 }
 
 impl IntegrityReport {
@@ -144,6 +146,26 @@ pub async fn check_experiment(
         r.fail(format!(
             "duplicate token+arm positions: {}",
             r.duplicate_arm_entries
+        ));
+    }
+
+    r.duplicate_entry_fills = sqlx::query_scalar(
+        r#"
+        SELECT COALESCE(COUNT(*),0) FROM (
+          SELECT token_address, policy_id FROM simulated_orders
+          WHERE policy_id LIKE $1 AND side='BUY' AND status IN ('FILLED','PARTIAL_FILL')
+          GROUP BY 1,2 HAVING COUNT(*) > 1
+        ) d
+        "#,
+    )
+    .bind(&like)
+    .fetch_one(store.pool())
+    .await
+    .unwrap_or(0);
+    if r.duplicate_entry_fills > 0 {
+        r.fail(format!(
+            "duplicate token+arm BUY fills: {}",
+            r.duplicate_entry_fills
         ));
     }
 

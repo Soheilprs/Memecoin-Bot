@@ -176,6 +176,12 @@ enum PonsExp001Cmd {
         experiment: String,
     },
     Invalidate001,
+    Invalidate {
+        #[arg(long)]
+        experiment: String,
+        #[arg(long)]
+        reason: String,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -517,6 +523,25 @@ async fn main() -> anyhow::Result<()> {
                     }
                     PonsExp001Cmd::Invalidate001 => {
                         match memecoin_engine::lab::pons_run::cmd_invalidate_exp001(&url).await {
+                            Ok(st) => println!(
+                                "INVALIDATED {} reason={}",
+                                st.lock.experiment_id,
+                                st.pause_reason.unwrap_or_default()
+                            ),
+                            Err(e) => {
+                                println!("invalidate error: {e}");
+                                std::process::exit(2);
+                            }
+                        }
+                    }
+                    PonsExp001Cmd::Invalidate { experiment, reason } => {
+                        match memecoin_engine::lab::pons_run::cmd_invalidate_id(
+                            &url,
+                            &experiment,
+                            &reason,
+                        )
+                        .await
+                        {
                             Ok(st) => println!(
                                 "INVALIDATED {} reason={}",
                                 st.lock.experiment_id,

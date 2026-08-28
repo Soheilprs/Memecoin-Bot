@@ -61,6 +61,11 @@ pub async fn cmd_relock_id(url: &str, experiment_id: &str) -> Result<Exp001State
     let store = PostgresStore::connect(url).await?;
     store.migrate().await?;
     if let Some(existing) = store.load_experiment_state(experiment_id).await? {
+        if existing.run_status == ExpRunStatus::Invalidated {
+            return Err(crate::error::EngineError::Ingest(format!(
+                "cannot relock INVALIDATED {experiment_id}"
+            )));
+        }
         if existing.started_at.is_some() {
             return Err(crate::error::EngineError::Ingest(
                 "cannot relock an experiment that has started_at".into(),
@@ -201,14 +206,27 @@ pub async fn cmd_status_id(
 }
 
 pub async fn cmd_invalidate_exp001(url: &str) -> Result<Exp001State> {
+    cmd_invalidate_id(
+        url,
+        EXP001_ID,
+        "PREFLIGHT_DATA_INTEGRITY: PRE_START_HYDRATED_TOKEN_RISK, VALID_UPTIME_NOT_ACCOUNTED, POSITION_FILL_COUNT_REQUIRES_RECONCILIATION",
+    )
+    .await
+}
+
+pub async fn cmd_invalidate_id(
+    url: &str,
+    experiment_id: &str,
+    reason: &str,
+) -> Result<Exp001State> {
     let store = PostgresStore::connect(url).await?;
     store.migrate().await?;
     let mut st = store
-        .load_exp001_state()
+        .load_experiment_state(experiment_id)
         .await?
-        .ok_or_else(|| crate::error::EngineError::Ingest("EXP001 not found".into()))?;
+        .ok_or_else(|| crate::error::EngineError::Ingest(format!("{experiment_id} not found")))?;
     let n_pos = store
-        .session_end_experiment_positions(EXP001_ID)
+        .session_end_experiment_positions(experiment_id)
         .await
         .unwrap_or(0);
     let n_censor = if let Some(t) = st.started_at {
@@ -220,37 +238,34 @@ pub async fn cmd_invalidate_exp001(url: &str) -> Result<Exp001State> {
         0
     };
     let _ = store
-        .close_open_observation_interval(EXP001_ID, Utc::now(), "INVALID", Some("INVALIDATED"))
+        .close_open_observation_interval(experiment_id, Utc::now(), "INVALID", Some("INVALIDATED"))
         .await;
     st.run_status = ExpRunStatus::Invalidated;
-    st.pause_reason = Some(
-        "PREFLIGHT_DATA_INTEGRITY: PRE_START_HYDRATED_TOKEN_RISK, VALID_UPTIME_NOT_ACCOUNTED, POSITION_FILL_COUNT_REQUIRES_RECONCILIATION"
-            .into(),
-    );
+    st.pause_reason = Some(reason.into());
     store.upsert_exp001_state(&st).await?;
     store
         .insert_experiment_audit(
-            EXP001_ID,
+            experiment_id,
             "EXPERIMENT_INVALIDATED",
             json!({
-                "reason": "PREFLIGHT_DATA_INTEGRITY",
-                "subreasons": [
-                    "PRE_START_HYDRATED_TOKEN_RISK",
-                    "VALID_UPTIME_NOT_ACCOUNTED",
-                    "POSITION_FILL_COUNT_REQUIRES_RECONCILIATION"
-                ],
+                "reason": reason,
                 "session_ended_open": n_pos,
                 "censored": n_censor,
-                "rows_deleted": 0
+                "rows_deleted": 0,
+                "started_at": st.started_at,
+                "start_block": st.start_block,
             }),
         )
         .await?;
     append_audit_file(
         "EXPERIMENT_INVALIDATED",
-        &json!({ "reason": "PREFLIGHT_DATA_INTEGRITY" }),
+        &json!({ "id": experiment_id, "reason": reason, "rows_deleted": 0 }),
     );
     if let Ok(s) = serde_json::to_string_pretty(&st) {
-        let _ = fs::write(lock_path(), s);
+        let _ = fs::write(lock_path_for(experiment_id), &s);
+        if experiment_id == EXP001_ID {
+            let _ = fs::write(lock_path(), &s);
+        }
     }
     Ok(st)
 }
@@ -273,6 +288,12 @@ pub async fn cmd_start_id_for(
             "PONS_PROSPECTIVE_EXP001 is INVALIDATED and cannot restart as the final test".into(),
         ));
     }
+    if experiment_id == EXP002_ID {
+        return Err(crate::error::EngineError::Ingest(
+            "PONS_PROSPECTIVE_EXP002 is INVALIDATED (RESTART_ENTRY_IDEMPOTENCY) and cannot restart"
+                .into(),
+        ));
+    }
     let url = config
         .database_url
         .clone()
@@ -287,6 +308,12 @@ pub async fn cmd_start_id_for(
         Some(s) => s,
         None => cmd_lock_id(&url, experiment_id).await?,
     };
+    if st.run_status == ExpRunStatus::Invalidated {
+        return Err(crate::error::EngineError::Ingest(format!(
+            "{experiment_id} is INVALIDATED ({}) and cannot restart",
+            st.pause_reason.as_deref().unwrap_or("unknown")
+        )));
+    }
     st.verify_lock()
         .map_err(|e| crate::error::EngineError::Ingest(e.into()))?;
     if st.started_at.is_none() {

@@ -1,0 +1,16 @@
+[Unit]
+Description=PONS_PROSPECTIVE_EXP003 paper experiment (no live trading)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/Users/soheilparsaei/startup/memecoin-bot
+EnvironmentFile=/Users/soheilparsaei/startup/memecoin-bot/.env
+ExecStart=/Users/soheilparsaei/startup/memecoin-bot/scripts/run-exp003.sh
+Restart=always
+RestartSec=10
+# Paper only. No keys.
+
+[Install]
+WantedBy=default.target

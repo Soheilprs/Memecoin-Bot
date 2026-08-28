@@ -28,6 +28,27 @@ pub struct PostgresStore {
     pool: PgPool,
 }
 
+#[derive(Debug, Clone)]
+pub struct OrphanEntryFill {
+    pub order_id: i64,
+    pub chain: Chain,
+    pub token: String,
+    pub arm: String,
+    pub payload: serde_json::Value,
+    pub feature_id: Option<i64>,
+    pub sec_id: Option<i64>,
+}
+
+type OrphanEntryFillRow = (
+    i64,
+    String,
+    String,
+    String,
+    serde_json::Value,
+    Option<i64>,
+    Option<i64>,
+);
+
 impl PostgresStore {
     pub async fn connect(database_url: &str) -> Result<Self> {
         let pool = PgPoolOptions::new()
@@ -1827,6 +1848,294 @@ impl PostgresStore {
                 Some(p)
             })
             .collect())
+    }
+
+    /// Atomic lifetime claim. Returns true iff this caller won the insert.
+    pub async fn claim_arm_entry(
+        &self,
+        experiment_id: &str,
+        chain: Chain,
+        token: &str,
+        strategy_policy_id: &str,
+        source: &str,
+    ) -> Result<bool> {
+        let row: Option<String> = sqlx::query_scalar(
+            r#"
+            INSERT INTO experiment_arm_entries
+                (experiment_id, chain, token_address, strategy_policy_id, source)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (experiment_id, chain, token_address, strategy_policy_id)
+            DO NOTHING
+            RETURNING experiment_id
+            "#,
+        )
+        .bind(experiment_id)
+        .bind(chain.as_str())
+        .bind(token)
+        .bind(strategy_policy_id)
+        .bind(source)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| EngineError::Storage(e.to_string()))?;
+        Ok(row.is_some())
+    }
+
+    pub async fn arm_entry_exists(
+        &self,
+        experiment_id: &str,
+        chain: Chain,
+        token: &str,
+        strategy_policy_id: &str,
+    ) -> Result<bool> {
+        let n: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*) FROM experiment_arm_entries
+            WHERE experiment_id = $1 AND chain = $2
+              AND token_address = $3 AND strategy_policy_id = $4
+            "#,
+        )
+        .bind(experiment_id)
+        .bind(chain.as_str())
+        .bind(token)
+        .bind(strategy_policy_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| EngineError::Storage(e.to_string()))?;
+        Ok(n > 0)
+    }
+
+    pub async fn load_lifetime_arm_entries(
+        &self,
+        experiment_id: &str,
+    ) -> Result<Vec<(Chain, String, String)>> {
+        let like = crate::lab::pons_exp::experiment_arm_like(experiment_id);
+        let rows: Vec<(String, String, String)> = sqlx::query_as(
+            r#"
+            SELECT DISTINCT chain, token_address, arm FROM (
+                SELECT chain, token_address, strategy_policy_id AS arm
+                  FROM experiment_arm_entries
+                 WHERE experiment_id = $1
+                UNION
+                SELECT chain, token_address, strategy_policy_id AS arm
+                  FROM simulated_positions
+                 WHERE strategy_policy_id LIKE $2
+                UNION
+                SELECT chain, token_address, policy_id AS arm
+                  FROM simulated_orders
+                 WHERE policy_id LIKE $2
+                   AND side = 'BUY'
+                   AND status IN ('FILLED', 'PARTIAL_FILL')
+            ) e
+            "#,
+        )
+        .bind(experiment_id)
+        .bind(&like)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| EngineError::Storage(e.to_string()))?;
+        Ok(rows
+            .into_iter()
+            .filter_map(|(chain, token, arm)| Some((Chain::parse(&chain)?, token, arm)))
+            .collect())
+    }
+
+    /// Mirror existing positions/fills into the claim table without changing those rows.
+    pub async fn ensure_arm_claims_from_evidence(&self, experiment_id: &str) -> Result<u64> {
+        let like = crate::lab::pons_exp::experiment_arm_like(experiment_id);
+        let a = sqlx::query(
+            r#"
+            INSERT INTO experiment_arm_entries
+                (experiment_id, chain, token_address, strategy_policy_id, source)
+            SELECT $1, chain, token_address, strategy_policy_id, 'RESTORE_POSITION'
+              FROM simulated_positions
+             WHERE strategy_policy_id LIKE $2
+            ON CONFLICT DO NOTHING
+            "#,
+        )
+        .bind(experiment_id)
+        .bind(&like)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| EngineError::Storage(e.to_string()))?;
+        let b = sqlx::query(
+            r#"
+            INSERT INTO experiment_arm_entries
+                (experiment_id, chain, token_address, strategy_policy_id, source)
+            SELECT $1, chain, token_address, policy_id, 'RESTORE_FILL'
+              FROM simulated_orders
+             WHERE policy_id LIKE $2
+               AND side = 'BUY'
+               AND status IN ('FILLED', 'PARTIAL_FILL')
+            ON CONFLICT DO NOTHING
+            "#,
+        )
+        .bind(experiment_id)
+        .bind(&like)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| EngineError::Storage(e.to_string()))?;
+        Ok(a.rows_affected() + b.rows_affected())
+    }
+
+    pub async fn load_orphan_entry_fills(
+        &self,
+        experiment_id: &str,
+    ) -> Result<Vec<OrphanEntryFill>> {
+        let like = crate::lab::pons_exp::experiment_arm_like(experiment_id);
+        let rows: Vec<OrphanEntryFillRow> = sqlx::query_as(
+            r#"
+            SELECT o.id, o.chain, o.token_address, o.policy_id, o.payload,
+                   o.feature_vector_id, o.security_assessment_id
+              FROM simulated_orders o
+             WHERE o.policy_id LIKE $1
+               AND o.side = 'BUY'
+               AND o.status IN ('FILLED', 'PARTIAL_FILL')
+               AND NOT EXISTS (
+                 SELECT 1 FROM simulated_positions p
+                  WHERE p.token_address = o.token_address
+                    AND p.strategy_policy_id = o.policy_id
+               )
+             ORDER BY o.id
+            "#,
+        )
+        .bind(&like)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| EngineError::Storage(e.to_string()))?;
+        Ok(rows
+            .into_iter()
+            .filter_map(|(id, chain, token, arm, payload, feat, sec)| {
+                Some(OrphanEntryFill {
+                    order_id: id,
+                    chain: Chain::parse(&chain)?,
+                    token,
+                    arm,
+                    payload,
+                    feature_id: feat,
+                    sec_id: sec,
+                })
+            })
+            .collect())
+    }
+
+    /// Insert a BUY order only if this (experiment, token, arm) has never been claimed.
+    /// Claim + order persist are one transaction so a crash cannot leave a claim-less fill
+    /// or a second BUY for the same arm.
+    #[allow(clippy::too_many_arguments)]
+    pub async fn insert_paper_order_claimed(
+        &self,
+        policy_id: &str,
+        chain: Chain,
+        token: &str,
+        side: &str,
+        decision_time: DateTime<Utc>,
+        requested_amount: &str,
+        status: &str,
+        feature_vector_id: Option<i64>,
+        security_assessment_id: Option<i64>,
+        payload: serde_json::Value,
+        experiment_id: Option<&str>,
+        position_id: Option<i64>,
+        exit_reason: Option<&str>,
+    ) -> Result<Option<i64>> {
+        let Some(exp) = experiment_id else {
+            return Ok(Some(
+                self.insert_paper_order_ex(
+                    policy_id,
+                    chain,
+                    token,
+                    side,
+                    decision_time,
+                    requested_amount,
+                    status,
+                    feature_vector_id,
+                    security_assessment_id,
+                    payload,
+                    None,
+                    position_id,
+                    exit_reason,
+                )
+                .await?,
+            ));
+        };
+        if side != "BUY" {
+            return Ok(Some(
+                self.insert_paper_order_ex(
+                    policy_id,
+                    chain,
+                    token,
+                    side,
+                    decision_time,
+                    requested_amount,
+                    status,
+                    feature_vector_id,
+                    security_assessment_id,
+                    payload,
+                    experiment_id,
+                    position_id,
+                    exit_reason,
+                )
+                .await?,
+            ));
+        }
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(|e| EngineError::Storage(e.to_string()))?;
+        let claimed: Option<String> = sqlx::query_scalar(
+            r#"
+            INSERT INTO experiment_arm_entries
+                (experiment_id, chain, token_address, strategy_policy_id, source)
+            VALUES ($1, $2, $3, $4, 'CLAIM')
+            ON CONFLICT (experiment_id, chain, token_address, strategy_policy_id)
+            DO NOTHING
+            RETURNING experiment_id
+            "#,
+        )
+        .bind(exp)
+        .bind(chain.as_str())
+        .bind(token)
+        .bind(policy_id)
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(|e| EngineError::Storage(e.to_string()))?;
+        if claimed.is_none() {
+            tx.rollback()
+                .await
+                .map_err(|e| EngineError::Storage(e.to_string()))?;
+            return Ok(None);
+        }
+        let id: i64 = sqlx::query_scalar(
+            r#"
+            INSERT INTO simulated_orders (
+                policy_id, chain, token_address, side, decision_time, requested_amount,
+                status, feature_vector_id, security_assessment_id, payload,
+                experiment_id, position_id, exit_reason
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+            RETURNING id
+            "#,
+        )
+        .bind(policy_id)
+        .bind(chain.as_str())
+        .bind(token)
+        .bind(side)
+        .bind(decision_time)
+        .bind(requested_amount)
+        .bind(status)
+        .bind(feature_vector_id)
+        .bind(security_assessment_id)
+        .bind(payload)
+        .bind(exp)
+        .bind(position_id)
+        .bind(exit_reason)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|e| EngineError::Storage(e.to_string()))?;
+        tx.commit()
+            .await
+            .map_err(|e| EngineError::Storage(e.to_string()))?;
+        Ok(Some(id))
     }
 
     pub async fn update_paper_position(
