@@ -33,6 +33,12 @@ pub enum CollectTarget {
     All,
 }
 
+/// Pons prospective paper runs Robinhood only. Base/Solana stay in the
+/// codebase but are not started for EXP004-class experiments.
+pub fn pons_prospective_target() -> CollectTarget {
+    CollectTarget::Robinhood
+}
+
 impl CollectTarget {
     pub fn parse(s: &str) -> Option<Self> {
         match s {
@@ -236,9 +242,31 @@ pub async fn run_collect_opts(
                         if let Some(id) = &exp_id {
                             if last_hb.elapsed() >= std::time::Duration::from_secs(30) {
                                 last_hb = std::time::Instant::now();
-                                let _ = store_t
-                                    .heartbeat_observation(id, chrono::Utc::now(), None, true)
-                                    .await;
+                                if let Some(r) = curve_r.as_ref() {
+                                    if r.circuit_open() {
+                                        crate::lab::observation::global().note_rate_limit();
+                                    } else {
+                                        crate::lab::observation::global().note_execution_ok();
+                                    }
+                                }
+                                let recovered = crate::lab::observation::global()
+                                    .evaluate(std::time::Instant::now())
+                                    == crate::lab::observation::ObservationReason::Healthy
+                                    && curve_r.as_ref().map(|r| !r.circuit_open()).unwrap_or(true);
+                                let _ = crate::lab::observation::apply_observation_health(
+                                    store_t.as_ref(),
+                                    id,
+                                    crate::lab::observation::global(),
+                                    recovered,
+                                )
+                                .await;
+                                let snap = crate::ingest::rpc_profile::snapshot();
+                                tracing::info!(
+                                    rpc_total = snap.total,
+                                    rpc_per_min = snap.per_minute,
+                                    rpc_fail = snap.failure,
+                                    "rpc profile"
+                                );
                             }
                         }
                     }

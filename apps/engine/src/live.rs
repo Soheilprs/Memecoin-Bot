@@ -139,6 +139,9 @@ pub struct LiveResearchRuntime {
     pub token_curve: HashMap<(Chain, String), String>,
     pub fail_reasons: HashMap<&'static str, u64>,
     pub entered_arms: HashSet<(Chain, String, String)>,
+    pub exit_backoff: HashMap<i64, std::time::Instant>,
+    pub exit_order_ids: HashMap<i64, i64>,
+    pub exit_fail_n: HashMap<i64, u32>,
 }
 
 impl LiveResearchRuntime {
@@ -171,6 +174,9 @@ impl LiveResearchRuntime {
             token_curve: HashMap::new(),
             fail_reasons: HashMap::new(),
             entered_arms: HashSet::new(),
+            exit_backoff: HashMap::new(),
+            exit_order_ids: HashMap::new(),
+            exit_fail_n: HashMap::new(),
         }
     }
 }
@@ -501,6 +507,10 @@ async fn manage_open_positions(
     if !runtime.paper {
         return;
     }
+    if curve_reader.is_some_and(|r| r.circuit_open()) {
+        crate::lab::observation::global().note_rate_limit();
+        return;
+    }
     let mut book: Vec<TokenStateSnapshot> = history
         .iter()
         .filter(|s| s.chain == snap.chain && s.token_address == snap.token_address)
@@ -516,6 +526,11 @@ async fn manage_open_positions(
         }
         if pos.status != PositionStatus::Open {
             continue;
+        }
+        if let Some(until) = runtime.exit_backoff.get(&pos.id) {
+            if std::time::Instant::now() < *until {
+                continue;
+            }
         }
         pos.mark(snap, &runtime.cfg.fees);
         let exit_id = parse_exit_policy(&pos.strategy_policy_id);
@@ -626,18 +641,61 @@ async fn manage_open_positions(
             DiscoveryMetrics::pons_execution_invalid(cls);
         }
         if let Some(pg) = pg {
-            let _ = persist_paper_exit(
-                pg,
-                pos,
-                &fill,
-                reason,
-                audit,
-                &amt,
-                experiment_id.as_deref(),
-                curve_state.as_ref(),
-                curve_state_id,
-            )
-            .await;
+            if !fill.status.is_fill() {
+                let n = runtime.exit_fail_n.entry(pos.id).or_insert(0);
+                *n = n.saturating_add(1);
+                let wait =
+                    std::time::Duration::from_millis(500u64.saturating_mul(1u64 << (*n).min(8)))
+                        .min(std::time::Duration::from_secs(30));
+                runtime
+                    .exit_backoff
+                    .insert(pos.id, std::time::Instant::now() + wait);
+                if let Some(&oid) = runtime.exit_order_ids.get(&pos.id) {
+                    let _ = persist_fill_attempt(
+                        pg,
+                        Some(oid),
+                        pos.events.len() as i32 + 1,
+                        &fill,
+                        experiment_id.as_deref(),
+                        Some(pos.id),
+                        pos.chain,
+                        &pos.token,
+                        "SELL",
+                        &amt,
+                        curve_state.as_ref(),
+                        curve_state_id,
+                    )
+                    .await;
+                } else if let Ok(oid) = persist_paper_exit(
+                    pg,
+                    pos,
+                    &fill,
+                    reason,
+                    audit,
+                    &amt,
+                    experiment_id.as_deref(),
+                    curve_state.as_ref(),
+                    curve_state_id,
+                )
+                .await
+                {
+                    runtime.exit_order_ids.insert(pos.id, oid);
+                }
+            } else {
+                runtime.exit_backoff.remove(&pos.id);
+                let _ = persist_paper_exit(
+                    pg,
+                    pos,
+                    &fill,
+                    reason,
+                    audit,
+                    &amt,
+                    experiment_id.as_deref(),
+                    curve_state.as_ref(),
+                    curve_state_id,
+                )
+                .await;
+            }
         }
         pos.apply_exit(&fill, reason, full);
         if let Some(pg) = pg {

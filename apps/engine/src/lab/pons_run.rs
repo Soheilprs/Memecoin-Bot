@@ -6,14 +6,14 @@ use std::time::{Duration, Instant};
 use chrono::Utc;
 use serde_json::json;
 
-use crate::collect::{run_collect_opts, CollectOpts, CollectTarget};
+use crate::collect::{pons_prospective_target, run_collect_opts, CollectOpts, CollectTarget};
 use crate::config::EngineConfig;
 use crate::domain::Chain;
 use crate::error::Result;
 use crate::ingest::evm::pons_curve::PonsCurveReader;
 use crate::lab::integrity::check_experiment;
 use crate::lab::pons_exp::{
-    git_commit, Exp001Lock, Exp001State, ExpRunStatus, EXP001_ID, EXP002_ID,
+    git_commit, Exp001Lock, Exp001State, ExpRunStatus, EXP001_ID, EXP002_ID, EXP003_ID,
 };
 use crate::storage::dbcheck::check_database;
 use crate::storage::postgres::PostgresStore;
@@ -294,6 +294,12 @@ pub async fn cmd_start_id_for(
                 .into(),
         ));
     }
+    if experiment_id == EXP003_ID {
+        return Err(crate::error::EngineError::Ingest(
+            "PONS_PROSPECTIVE_EXP003 is INVALIDATED (RPC_EXECUTION_BLINDNESS) and cannot restart"
+                .into(),
+        ));
+    }
     let url = config
         .database_url
         .clone()
@@ -383,7 +389,12 @@ pub async fn cmd_start_id_for(
         config_hash = %st.config_hash,
         "prospective paper start: 15 arms, no broadcast, no backfill"
     );
-    let result = run_collect_opts(config, CollectTarget::Evm, opts).await;
+    tracing::info!(
+        target = ?pons_prospective_target(),
+        chains = ?pons_prospective_target().chains(),
+        "pons prospective collector target is Robinhood-only"
+    );
+    let result = run_collect_opts(config, pons_prospective_target(), opts).await;
     if duration.is_some() {
         let _ = store.session_end_experiment_positions(experiment_id).await;
         let _ = store

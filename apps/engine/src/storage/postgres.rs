@@ -2784,26 +2784,63 @@ impl PostgresStore {
         experiment_id: &str,
         at: DateTime<Utc>,
         head: Option<u64>,
-        healthy: bool,
+        _healthy: bool,
     ) -> Result<()> {
-        let status = if healthy { "VALID" } else { "PARTIAL" };
+        // Heartbeat must not rewrite VALID. Coverage is driven by apply_observation_health.
+        self.touch_observation_heartbeat_head(experiment_id, at, head)
+            .await
+    }
+
+    pub async fn touch_observation_heartbeat(
+        &self,
+        experiment_id: &str,
+        at: DateTime<Utc>,
+    ) -> Result<()> {
+        self.touch_observation_heartbeat_head(experiment_id, at, None)
+            .await
+    }
+
+    async fn touch_observation_heartbeat_head(
+        &self,
+        experiment_id: &str,
+        at: DateTime<Utc>,
+        head: Option<u64>,
+    ) -> Result<()> {
         sqlx::query(
             r#"
             UPDATE experiment_observation_intervals
             SET heartbeat_at = $2,
-                status = CASE WHEN ended_at IS NULL THEN $3 ELSE status END,
-                execution_quality = $4
+                execution_quality = COALESCE($3, execution_quality)
             WHERE experiment_id = $1 AND ended_at IS NULL
             "#,
         )
         .bind(experiment_id)
         .bind(at)
-        .bind(status)
         .bind(head.map(|h| h.to_string()))
         .execute(&self.pool)
         .await
         .map_err(|e| EngineError::Storage(e.to_string()))?;
         Ok(())
+    }
+
+    pub async fn load_open_observation(
+        &self,
+        experiment_id: &str,
+    ) -> Result<Option<(i64, String, DateTime<Utc>)>> {
+        let row: Option<(i64, String, DateTime<Utc>)> = sqlx::query_as(
+            r#"
+            SELECT id, status, started_at
+            FROM experiment_observation_intervals
+            WHERE experiment_id = $1 AND ended_at IS NULL
+            ORDER BY id DESC
+            LIMIT 1
+            "#,
+        )
+        .bind(experiment_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| EngineError::Storage(e.to_string()))?;
+        Ok(row)
     }
 
     pub async fn valid_uptime_secs(&self, experiment_id: &str) -> Result<i64> {

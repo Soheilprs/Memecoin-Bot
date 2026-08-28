@@ -4,6 +4,7 @@ pub mod analysis;
 pub mod exp001;
 pub mod experiment;
 pub mod integrity;
+pub mod observation;
 pub mod persist;
 pub mod pons_exp;
 pub mod pons_run;

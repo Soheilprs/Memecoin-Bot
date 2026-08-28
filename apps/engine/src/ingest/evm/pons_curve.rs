@@ -1,9 +1,11 @@
 //! Read-only Pons V2 curve state via verified getters. No sendTransaction.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+
+use tokio::sync::broadcast;
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -13,6 +15,9 @@ use tokio::sync::Semaphore;
 use crate::domain::Chain;
 use crate::error::{EngineError, Result};
 use crate::ingest::rpc_json::{hex_u64, http_jsonrpc};
+use crate::ingest::rpc_profile::{record, RpcPurpose};
+use crate::ingest::rpc_provider::{classify_circuit, CircuitKind, RpcPool};
+use crate::lab::observation;
 use crate::metrics::DiscoveryMetrics;
 use crate::state::amt::{parse_u256, u256_dec};
 use crate::state::pons_curve::{
@@ -84,10 +89,22 @@ pub struct HistoricalCallCapability {
 }
 
 #[derive(Debug, Clone)]
+pub struct StaticCurveCfg {
+    pub fee_bps: u32,
+    pub creator_tax_bps: u32,
+    pub graduation_threshold: String,
+}
+
+#[derive(Debug, Clone)]
 pub enum ReaderMode {
     Live(String),
     Mock(Box<PonsCurveState>),
     Fail(CurveReadErrorKind, String),
+    CountedMock {
+        state: Box<PonsCurveState>,
+        delay: Duration,
+        fetches: Arc<AtomicU64>,
+    },
 }
 
 #[derive(Clone)]
@@ -95,16 +112,48 @@ pub struct PonsCurveReader {
     inner: Arc<Inner>,
 }
 
+type InFlightTx = broadcast::Sender<std::result::Result<PonsCurveState, String>>;
+
 struct Inner {
     http: reqwest::Client,
     mode: ReaderMode,
     cache: Mutex<HashMap<(String, u64), PonsCurveState>>,
+    static_cfg: Mutex<HashMap<String, StaticCurveCfg>>,
+    code_ok: Mutex<HashSet<String>>,
+    inflight: tokio::sync::Mutex<HashMap<(String, u64), InFlightTx>>,
     sem: Semaphore,
     historical: Mutex<Option<HistoricalCallCapability>>,
     reads: AtomicU64,
     failures: AtomicU64,
     cache_hits: AtomicU64,
     rate_limits: AtomicU64,
+    fetch_count: AtomicU64,
+    circuit_until: Mutex<Option<Instant>>,
+    circuit_kind: Mutex<Option<CircuitKind>>,
+    pool: Option<RpcPool>,
+    last_head: Mutex<Option<(u64, Instant)>>,
+}
+
+fn empty_inner(http: reqwest::Client, mode: ReaderMode) -> Inner {
+    Inner {
+        http,
+        mode,
+        cache: Mutex::new(HashMap::new()),
+        static_cfg: Mutex::new(HashMap::new()),
+        code_ok: Mutex::new(HashSet::new()),
+        inflight: tokio::sync::Mutex::new(HashMap::new()),
+        sem: Semaphore::new(MAX_INFLIGHT),
+        historical: Mutex::new(None),
+        reads: AtomicU64::new(0),
+        failures: AtomicU64::new(0),
+        cache_hits: AtomicU64::new(0),
+        rate_limits: AtomicU64::new(0),
+        fetch_count: AtomicU64::new(0),
+        circuit_until: Mutex::new(None),
+        circuit_kind: Mutex::new(None),
+        pool: None,
+        last_head: Mutex::new(None),
+    }
 }
 
 impl PonsCurveReader {
@@ -113,56 +162,46 @@ impl PonsCurveReader {
             .timeout(CALL_TIMEOUT)
             .build()
             .map_err(|e| EngineError::Rpc(e.to_string()))?;
+        let mut inner = empty_inner(http, ReaderMode::Live(http_url.into()));
+        inner.pool = RpcPool::robinhood_from_env();
         Ok(Self {
-            inner: Arc::new(Inner {
-                http,
-                mode: ReaderMode::Live(http_url.into()),
-                cache: Mutex::new(HashMap::new()),
-                sem: Semaphore::new(MAX_INFLIGHT),
-                historical: Mutex::new(None),
-                reads: AtomicU64::new(0),
-                failures: AtomicU64::new(0),
-                cache_hits: AtomicU64::new(0),
-                rate_limits: AtomicU64::new(0),
-            }),
+            inner: Arc::new(inner),
         })
     }
 
     pub fn mock(state: PonsCurveState) -> Self {
+        let mut inner = empty_inner(reqwest::Client::new(), ReaderMode::Mock(Box::new(state)));
+        inner.historical = Mutex::new(Some(HistoricalCallCapability {
+            supported: true,
+            tested_head: 0,
+            tested_offsets: vec![0, 10, 100],
+            failed_offset: None,
+            note: "mock reader".into(),
+        }));
         Self {
-            inner: Arc::new(Inner {
-                http: reqwest::Client::new(),
-                mode: ReaderMode::Mock(Box::new(state)),
-                cache: Mutex::new(HashMap::new()),
-                sem: Semaphore::new(MAX_INFLIGHT),
-                historical: Mutex::new(Some(HistoricalCallCapability {
-                    supported: true,
-                    tested_head: 0,
-                    tested_offsets: vec![0, 10, 100],
-                    failed_offset: None,
-                    note: "mock reader".into(),
-                })),
-                reads: AtomicU64::new(0),
-                failures: AtomicU64::new(0),
-                cache_hits: AtomicU64::new(0),
-                rate_limits: AtomicU64::new(0),
-            }),
+            inner: Arc::new(inner),
+        }
+    }
+
+    pub fn counted_mock(state: PonsCurveState, delay: Duration, fetches: Arc<AtomicU64>) -> Self {
+        Self {
+            inner: Arc::new(empty_inner(
+                reqwest::Client::new(),
+                ReaderMode::CountedMock {
+                    state: Box::new(state),
+                    delay,
+                    fetches,
+                },
+            )),
         }
     }
 
     pub fn failing(kind: CurveReadErrorKind, message: impl Into<String>) -> Self {
         Self {
-            inner: Arc::new(Inner {
-                http: reqwest::Client::new(),
-                mode: ReaderMode::Fail(kind, message.into()),
-                cache: Mutex::new(HashMap::new()),
-                sem: Semaphore::new(MAX_INFLIGHT),
-                historical: Mutex::new(None),
-                reads: AtomicU64::new(0),
-                failures: AtomicU64::new(0),
-                cache_hits: AtomicU64::new(0),
-                rate_limits: AtomicU64::new(0),
-            }),
+            inner: Arc::new(empty_inner(
+                reqwest::Client::new(),
+                ReaderMode::Fail(kind, message.into()),
+            )),
         }
     }
 
@@ -184,33 +223,61 @@ impl PonsCurveReader {
     }
 
     pub async fn head_block(&self) -> std::result::Result<u64, CurveReadError> {
+        if let Some((h, t)) = *self.inner.last_head.lock().expect("h") {
+            if t.elapsed() < Duration::from_secs(1) {
+                return Ok(h);
+            }
+        }
         match &self.inner.mode {
             ReaderMode::Live(url) => {
                 let v = self
                     .rpc(url, "eth_blockNumber", json!([]))
                     .await
                     .map_err(|e| classify_rpc(&e.to_string()))?;
-                hex_u64(&v)
-                    .ok_or_else(|| CurveReadError::new(CurveReadErrorKind::Invalid, "bad head"))
+                let h = hex_u64(&v)
+                    .ok_or_else(|| CurveReadError::new(CurveReadErrorKind::Invalid, "bad head"))?;
+                *self.inner.last_head.lock().expect("h") = Some((h, Instant::now()));
+                Ok(h)
             }
-            ReaderMode::Mock(s) => Ok(s.block_number.unwrap_or(1)),
+            ReaderMode::Mock(s) | ReaderMode::CountedMock { state: s, .. } => {
+                Ok(s.block_number.unwrap_or(1))
+            }
             ReaderMode::Fail(k, m) => Err(CurveReadError::new(*k, m.clone())),
         }
     }
 
+    pub fn fetch_count(&self) -> u64 {
+        self.inner.fetch_count.load(Ordering::Relaxed)
+    }
+
+    pub fn circuit_open(&self) -> bool {
+        self.inner
+            .circuit_until
+            .lock()
+            .expect("c")
+            .is_some_and(|t| Instant::now() < t)
+    }
+
+    fn trip_circuit(&self, kind: CircuitKind) {
+        let mut g = self.inner.circuit_until.lock().expect("c");
+        let base = match kind {
+            CircuitKind::Quota => Duration::from_secs(60),
+            CircuitKind::Throughput => Duration::from_secs(1),
+            CircuitKind::Unavailable => Duration::from_secs(5),
+        };
+        *g = Some(Instant::now() + base);
+        *self.inner.circuit_kind.lock().expect("k") = Some(kind);
+        observation::global().note_rate_limit();
+    }
+
     /// Block-pinned getter read. Cache key is (curve, block_number).
+    /// Concurrent callers for the same key share one RPC fetch (single-flight).
     pub async fn read(
         &self,
         token: &str,
         curve: &str,
         block: Option<u64>,
     ) -> std::result::Result<PonsCurveState, CurveReadError> {
-        let _permit = self
-            .inner
-            .sem
-            .acquire()
-            .await
-            .map_err(|e| CurveReadError::new(CurveReadErrorKind::Other, e.to_string()))?;
         self.inner.reads.fetch_add(1, Ordering::Relaxed);
         DiscoveryMetrics::pons_curve_state_read();
 
@@ -228,7 +295,14 @@ impl PonsCurveReader {
                 self.note_failure(*k);
                 return Err(CurveReadError::new(*k, m.clone()));
             }
-            ReaderMode::Live(_) => {}
+            ReaderMode::Live(_) | ReaderMode::CountedMock { .. } => {}
+        }
+
+        if self.circuit_open() {
+            return Err(CurveReadError::new(
+                CurveReadErrorKind::RateLimit,
+                "circuit open",
+            ));
         }
 
         let head = match block {
@@ -236,36 +310,77 @@ impl PonsCurveReader {
             None => self.head_block().await?,
         };
         let curve_n = curve.to_ascii_lowercase();
-        if let Some(hit) = self
-            .inner
-            .cache
-            .lock()
-            .expect("cache")
-            .get(&(curve_n.clone(), head))
-            .cloned()
-        {
+        let key = (curve_n.clone(), head);
+        if let Some(hit) = self.inner.cache.lock().expect("cache").get(&key).cloned() {
             self.inner.cache_hits.fetch_add(1, Ordering::Relaxed);
             DiscoveryMetrics::pons_curve_state_cache_hit();
             return Ok(hit);
         }
 
+        let mut inflight = self.inner.inflight.lock().await;
+        if let Some(tx) = inflight.get(&key) {
+            let mut rx = tx.subscribe();
+            drop(inflight);
+            return match rx.recv().await {
+                Ok(Ok(st)) => Ok(st),
+                Ok(Err(e)) => Err(classify_rpc(&e)),
+                Err(_) => Err(CurveReadError::new(
+                    CurveReadErrorKind::Other,
+                    "single-flight closed",
+                )),
+            };
+        }
+        let (tx, _rx) = broadcast::channel(16);
+        inflight.insert(key.clone(), tx.clone());
+        drop(inflight);
+
+        let _permit = self
+            .inner
+            .sem
+            .acquire()
+            .await
+            .map_err(|e| CurveReadError::new(CurveReadErrorKind::Other, e.to_string()))?;
+        self.inner.fetch_count.fetch_add(1, Ordering::Relaxed);
         let started = Instant::now();
-        let result = self.read_live(&curve_n, token, head).await;
+        let result = match &self.inner.mode {
+            ReaderMode::CountedMock {
+                state,
+                delay,
+                fetches,
+            } => {
+                fetches.fetch_add(1, Ordering::Relaxed);
+                tokio::time::sleep(*delay).await;
+                let mut out = (**state).clone();
+                out.token = token.to_ascii_lowercase();
+                out.curve = curve_n.clone();
+                out.block_number = Some(head);
+                Ok(out)
+            }
+            _ => self.read_live(&curve_n, token, head).await,
+        };
         DiscoveryMetrics::pons_curve_state_latency_ms(started.elapsed().as_millis() as i64);
-        match result {
+        let out = match result {
             Ok(state) => {
                 self.inner
                     .cache
                     .lock()
                     .expect("cache")
-                    .insert((curve_n, head), state.clone());
+                    .insert(key.clone(), state.clone());
+                observation::global().note_execution_ok();
+                let _ = tx.send(Ok(state.clone()));
                 Ok(state)
             }
             Err(e) => {
                 self.note_failure(e.kind);
+                if let Some(k) = classify_circuit(&e.message) {
+                    self.trip_circuit(k);
+                }
+                let _ = tx.send(Err(e.reason()));
                 Err(e)
             }
-        }
+        };
+        self.inner.inflight.lock().await.remove(&key);
+        out
     }
 
     async fn read_live(
@@ -279,28 +394,34 @@ impl PonsCurveReader {
             _ => unreachable!(),
         };
         let tag = format!("0x{block:x}");
-        let code = self.eth_call_raw(&url, curve, "0x", Some(&tag)).await.ok();
-        // getCode separately
-        let code_v = self.rpc(&url, "eth_getCode", json!([curve, tag])).await;
-        match code_v {
-            Ok(Value::String(s)) if s == "0x" || s == "0x0" || s.len() <= 2 => {
-                return Err(CurveReadError::new(
-                    CurveReadErrorKind::NotFound,
-                    "eth_getCode empty",
-                ));
-            }
-            Err(e) => {
-                let c = classify_rpc(&e.to_string());
-                if matches!(
-                    c.kind,
-                    CurveReadErrorKind::Timeout | CurveReadErrorKind::RateLimit
-                ) {
-                    return Err(c);
+        let already_coded = self.inner.code_ok.lock().expect("code").contains(curve);
+        if !already_coded {
+            let code_v = self.rpc(&url, "eth_getCode", json!([curve, tag])).await;
+            match code_v {
+                Ok(Value::String(s)) if s == "0x" || s == "0x0" || s.len() <= 2 => {
+                    return Err(CurveReadError::new(
+                        CurveReadErrorKind::NotFound,
+                        "eth_getCode empty",
+                    ));
+                }
+                Err(e) => {
+                    let c = classify_rpc(&e.to_string());
+                    if matches!(
+                        c.kind,
+                        CurveReadErrorKind::Timeout | CurveReadErrorKind::RateLimit
+                    ) {
+                        return Err(c);
+                    }
+                }
+                _ => {
+                    self.inner
+                        .code_ok
+                        .lock()
+                        .expect("code")
+                        .insert(curve.into());
                 }
             }
-            _ => {}
         }
-        let _ = code;
 
         let hist = self.inner.historical.lock().expect("hist").clone();
         let (tag_used, quality) = match hist {
@@ -341,24 +462,46 @@ impl PonsCurveReader {
             .ok()
             .and_then(|h| decode_abi_words(&h).into_iter().next())
             .unwrap_or_else(|| "0".into());
-        let threshold = self
-            .eth_call_fn(&url, curve, GRADUATION_THRESHOLD, &tag_used)
-            .await
-            .ok()
-            .and_then(|h| decode_abi_words(&h).into_iter().next())
-            .unwrap_or_else(|| "0".into());
-        let fee = self
-            .eth_call_fn(&url, curve, FEE_BPS, &tag_used)
-            .await
-            .ok()
-            .and_then(|h| decode_abi_words(&h).into_iter().next())
-            .unwrap_or_else(|| "0".into());
-        let ctax = self
-            .eth_call_fn(&url, curve, CREATOR_TAX_BPS, &tag_used)
-            .await
-            .ok()
-            .and_then(|h| decode_abi_words(&h).into_iter().next())
-            .unwrap_or_else(|| "0".into());
+        let static_hit = self
+            .inner
+            .static_cfg
+            .lock()
+            .expect("st")
+            .get(curve)
+            .cloned();
+        let (threshold, fee_bps, creator_tax_bps) = if let Some(st) = static_hit {
+            (st.graduation_threshold, st.fee_bps, st.creator_tax_bps)
+        } else {
+            let threshold = self
+                .eth_call_fn(&url, curve, GRADUATION_THRESHOLD, &tag_used)
+                .await
+                .ok()
+                .and_then(|h| decode_abi_words(&h).into_iter().next())
+                .unwrap_or_else(|| "0".into());
+            let fee = self
+                .eth_call_fn(&url, curve, FEE_BPS, &tag_used)
+                .await
+                .ok()
+                .and_then(|h| decode_abi_words(&h).into_iter().next())
+                .unwrap_or_else(|| "0".into());
+            let ctax = self
+                .eth_call_fn(&url, curve, CREATOR_TAX_BPS, &tag_used)
+                .await
+                .ok()
+                .and_then(|h| decode_abi_words(&h).into_iter().next())
+                .unwrap_or_else(|| "0".into());
+            let fee_bps = u32::try_from(parse_u256(&fee)).unwrap_or(0).min(10_000);
+            let creator_tax_bps = u32::try_from(parse_u256(&ctax)).unwrap_or(0).min(10_000);
+            self.inner.static_cfg.lock().expect("st").insert(
+                curve.into(),
+                StaticCurveCfg {
+                    fee_bps,
+                    creator_tax_bps,
+                    graduation_threshold: threshold.clone(),
+                },
+            );
+            (threshold, fee_bps, creator_tax_bps)
+        };
         let graduated = self
             .eth_call_fn(&url, curve, GRADUATED, &tag_used)
             .await
@@ -379,8 +522,6 @@ impl PonsCurveReader {
         } else {
             PonsCurveStatus::Active
         };
-        let fee_bps = u32::try_from(parse_u256(&fee)).unwrap_or(0).min(10_000);
-        let creator_tax_bps = u32::try_from(parse_u256(&ctax)).unwrap_or(0).min(10_000);
         let progress = PonsCurveState::progress_from_reserves(&real_q, &threshold);
 
         let mut block_hash = None;
@@ -518,6 +659,12 @@ impl PonsCurveReader {
                 }
                 Err(e) => {
                     last = classify_rpc(&e.to_string());
+                    if let Some(k) = classify_circuit(&e.to_string()) {
+                        self.trip_circuit(k);
+                        if k == CircuitKind::Quota {
+                            return Err(last);
+                        }
+                    }
                     if matches!(
                         last.kind,
                         CurveReadErrorKind::Timeout | CurveReadErrorKind::RateLimit
@@ -534,7 +681,22 @@ impl PonsCurveReader {
     }
 
     async fn rpc(&self, url: &str, method: &str, params: Value) -> Result<Value> {
-        http_jsonrpc(&self.inner.http, url, method, params).await
+        if let Some(pool) = &self.inner.pool {
+            return pool
+                .call(&self.inner.http, method, params, RpcPurpose::PonsCurve)
+                .await;
+        }
+        let t0 = Instant::now();
+        let r = http_jsonrpc(&self.inner.http, url, method, params).await;
+        record(
+            "robinhood",
+            method,
+            RpcPurpose::PonsCurve,
+            r.is_ok(),
+            t0.elapsed(),
+            None,
+        );
+        r
     }
 
     fn note_failure(&self, kind: CurveReadErrorKind) {

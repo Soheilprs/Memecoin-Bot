@@ -8,6 +8,8 @@ use crate::storage::Checkpoint;
 pub mod backoff;
 pub mod evm;
 pub mod rpc_json;
+pub mod rpc_profile;
+pub mod rpc_provider;
 pub mod solana;
 
 #[async_trait]

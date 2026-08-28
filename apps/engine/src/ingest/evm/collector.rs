@@ -16,7 +16,9 @@ use crate::domain::Chain;
 use crate::error::{EngineError, Result};
 use crate::ingest::backoff::{redact_url, Backoff};
 use crate::ingest::rpc_json::{hex_u64, http_jsonrpc};
+use crate::ingest::rpc_profile::{record, RpcPurpose};
 use crate::ingest::ResumePlan;
+use crate::lab::observation;
 use crate::metrics::DiscoveryMetrics;
 use crate::registry::{
     BASE_V4_POOL_MANAGER, CLANKER_V4_FACTORY, PONS_V2_FACTORY, ROBINHOOD_V4_POOL_MANAGER,
@@ -63,6 +65,11 @@ impl<S: EventStore + Sync + 'static> EvmLiveCollector<S> {
                     }
                 }
                 Err(err) => {
+                    observation::global().note_collector_down();
+                    let msg = err.to_string();
+                    if msg.contains("429") || msg.to_ascii_lowercase().contains("capacity") {
+                        observation::global().note_rate_limit();
+                    }
                     tracing::warn!(
                         chain = %self.config.chain,
                         error = %err,
@@ -215,6 +222,7 @@ impl<S: EventStore + Sync + 'static> EvmLiveCollector<S> {
                     0
                 };
                 self.metrics.chain_head_lag_ms(self.config.chain, lag);
+                observation::global().note_head(self.config.chain, n);
                 let _ = self
                     .store
                     .upsert_head(&ChainHead {
@@ -237,6 +245,7 @@ impl<S: EventStore + Sync + 'static> EvmLiveCollector<S> {
         }
         if result.get("topics").is_some() {
             if let Some(raw) = self.log_to_raw(&result, "evm_ws") {
+                observation::global().note_log();
                 self.route(raw, sender, pending).await?;
             }
         }
@@ -311,7 +320,22 @@ impl<S: EventStore + Sync + 'static> EvmLiveCollector<S> {
                 "toBlock": format!("0x{end:x}"),
                 "topics": [self.topics.clone()],
             }]);
-            let result = http_jsonrpc(http, &self.http_url, "eth_getLogs", params).await?;
+            let t0 = Instant::now();
+            let purpose = if self.config.chain == Chain::Base {
+                RpcPurpose::BaseShadow
+            } else {
+                RpcPurpose::Backfill
+            };
+            let result = http_jsonrpc(http, &self.http_url, "eth_getLogs", params.clone()).await;
+            record(
+                self.config.chain.as_str(),
+                "eth_getLogs",
+                purpose,
+                result.is_ok(),
+                t0.elapsed(),
+                None,
+            );
+            let result = result?;
             if let Some(arr) = result.as_array() {
                 for log in arr {
                     if let Some(raw) = self.log_to_raw(log, "evm_backfill") {
@@ -417,7 +441,17 @@ async fn emit(sender: &Sender<RawEvent>, raw: RawEvent, metrics: &DiscoveryMetri
 }
 
 pub async fn eth_block_number(http: &reqwest::Client, url: &str) -> Result<u64> {
-    let v = http_jsonrpc(http, url, "eth_blockNumber", json!([])).await?;
+    let t0 = Instant::now();
+    let v = http_jsonrpc(http, url, "eth_blockNumber", json!([])).await;
+    record(
+        "evm",
+        "eth_blockNumber",
+        RpcPurpose::Head,
+        v.is_ok(),
+        t0.elapsed(),
+        None,
+    );
+    let v = v?;
     hex_u64(&v).ok_or_else(|| EngineError::Rpc("bad block number".into()))
 }
 
