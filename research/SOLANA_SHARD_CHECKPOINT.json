@@ -1,0 +1,283 @@
+{
+  "done": [
+    "trades-00016.parquet",
+    "trades-00017.parquet"
+  ],
+  "per_shard": {
+    "trades-00016.parquet": {
+      "checksum": "db90859dbd371141a6e8c2f673d478462ef79da2ace6a1bcfa6fa06e91c2a9a0",
+      "row_groups_complete": 2,
+      "rows": 1966080,
+      "tokens_affected": 20109,
+      "feature_rows_emitted": 80436,
+      "label_rows_emitted": 19664,
+      "hypotheses": {
+        "n": 19664,
+        "H1_buyers_ge_3": {
+          "n": 6383,
+          "p2": 0.215729,
+          "p10": 0.01269
+        },
+        "H1_complement": {
+          "n": 13281,
+          "p2": 0.17958,
+          "p10": 0.030419
+        },
+        "H2_buyers_plus_imbalance": {
+          "n": 5699,
+          "p2": 0.33462,
+          "p10": 0.026496
+        },
+        "H3_price_without_buyers": {
+          "n": 358,
+          "p2": 0.089385,
+          "p10": 0.005587
+        },
+        "H4_low_participation": {
+          "n": 13281,
+          "p2": 0.17958,
+          "p10": 0.030419
+        },
+        "predeclared": true
+      },
+      "cohorts": {
+        "<2X": 15902,
+        "2X+": 2644,
+        "20X+": 246,
+        "10X+": 239,
+        "5X+": 633
+      },
+      "baseline": {
+        "p2": 0.191314,
+        "p5": 0.056855,
+        "p10": 0.024664
+      },
+      "lifts": {
+        "30s": {
+          "unique_buyers_ge_3": {
+            "n": 6383,
+            "p2": 0.215729,
+            "p5": 0.043867,
+            "p10": 0.01269,
+            "baseline_p2": 0.191314,
+            "baseline_p5": 0.056855,
+            "baseline_p10": 0.024664
+          },
+          "unique_buyers_lt_3": {
+            "n": 13281,
+            "p2": 0.17958
+          }
+        },
+        "60s": {
+          "unique_buyers_ge_3": {
+            "n": 8221,
+            "p2": 0.26481,
+            "p5": 0.073227,
+            "p10": 0.027004,
+            "baseline_p2": 0.191314,
+            "baseline_p5": 0.056855,
+            "baseline_p10": 0.024664
+          },
+          "unique_buyers_lt_3": {
+            "n": 11443,
+            "p2": 0.138513
+          }
+        },
+        "2m": {
+          "unique_buyers_ge_3": {
+            "n": 9338,
+            "p2": 0.292996,
+            "p5": 0.092097,
+            "p10": 0.039302,
+            "baseline_p2": 0.191314,
+            "baseline_p5": 0.056855,
+            "baseline_p10": 0.024664
+          },
+          "unique_buyers_lt_3": {
+            "n": 10326,
+            "p2": 0.099361
+          }
+        },
+        "5m": {
+          "unique_buyers_ge_3": {
+            "n": 9991,
+            "p2": 0.301371,
+            "p5": 0.098589,
+            "p10": 0.04474,
+            "baseline_p2": 0.191314,
+            "baseline_p5": 0.056855,
+            "baseline_p10": 0.024664
+          },
+          "unique_buyers_lt_3": {
+            "n": 9673,
+            "p2": 0.077639
+          }
+        }
+      },
+      "pairwise": {
+        "30s": {
+          "buyers_plus_net_flow_n": 5699,
+          "buyers_plus_net_flow_p10": 0.026496,
+          "price_up_no_buyers_n": 358,
+          "price_up_no_buyers_p10": 0.005587
+        },
+        "60s": {
+          "buyers_plus_net_flow_n": 6107,
+          "buyers_plus_net_flow_p10": 0.039627,
+          "price_up_no_buyers_n": 341,
+          "price_up_no_buyers_p10": 0.0
+        },
+        "2m": {
+          "buyers_plus_net_flow_n": 6282,
+          "buyers_plus_net_flow_p10": 0.051894,
+          "price_up_no_buyers_n": 203,
+          "price_up_no_buyers_p10": 0.0
+        },
+        "5m": {
+          "buyers_plus_net_flow_n": 6244,
+          "buyers_plus_net_flow_p10": 0.061819,
+          "price_up_no_buyers_n": 144,
+          "price_up_no_buyers_p10": 0.0
+        }
+      }
+    },
+    "trades-00017.parquet": {
+      "checksum": "3e48808f2ee97c7238af48446ef1ee2028b93fed58f11715dce6ef5a15fbe580",
+      "row_groups_complete": 1,
+      "rows": 158060,
+      "tokens_affected": 1824,
+      "feature_rows_emitted": 7296,
+      "label_rows_emitted": 1806,
+      "hypotheses": {
+        "n": 1806,
+        "H1_buyers_ge_3": {
+          "n": 591,
+          "p2": 0.20643,
+          "p10": 0.010152
+        },
+        "H1_complement": {
+          "n": 1215,
+          "p2": 0.14321,
+          "p10": 0.015638
+        },
+        "H2_buyers_plus_imbalance": {
+          "n": 413,
+          "p2": 0.372881,
+          "p10": 0.016949
+        },
+        "H3_price_without_buyers": {
+          "n": 66,
+          "p2": 0.045455,
+          "p10": 0.0
+        },
+        "H4_low_participation": {
+          "n": 1215,
+          "p2": 0.14321,
+          "p10": 0.015638
+        },
+        "predeclared": true
+      },
+      "cohorts": {
+        "<2X": 1510,
+        "2X+": 235,
+        "5X+": 36,
+        "10X+": 16,
+        "20X+": 9
+      },
+      "baseline": {
+        "p2": 0.163898,
+        "p5": 0.033776,
+        "p10": 0.013843
+      },
+      "lifts": {
+        "30s": {
+          "unique_buyers_ge_3": {
+            "n": 591,
+            "p2": 0.20643,
+            "p5": 0.032149,
+            "p10": 0.010152,
+            "baseline_p2": 0.163898,
+            "baseline_p5": 0.033776,
+            "baseline_p10": 0.013843
+          },
+          "unique_buyers_lt_3": {
+            "n": 1215,
+            "p2": 0.14321
+          }
+        },
+        "60s": {
+          "unique_buyers_ge_3": {
+            "n": 725,
+            "p2": 0.249655,
+            "p5": 0.049655,
+            "p10": 0.02069,
+            "baseline_p2": 0.163898,
+            "baseline_p5": 0.033776,
+            "baseline_p10": 0.013843
+          },
+          "unique_buyers_lt_3": {
+            "n": 1081,
+            "p2": 0.106383
+          }
+        },
+        "2m": {
+          "unique_buyers_ge_3": {
+            "n": 804,
+            "p2": 0.257463,
+            "p5": 0.054726,
+            "p10": 0.023632,
+            "baseline_p2": 0.163898,
+            "baseline_p5": 0.033776,
+            "baseline_p10": 0.013843
+          },
+          "unique_buyers_lt_3": {
+            "n": 1002,
+            "p2": 0.088822
+          }
+        },
+        "5m": {
+          "unique_buyers_ge_3": {
+            "n": 845,
+            "p2": 0.262722,
+            "p5": 0.065089,
+            "p10": 0.029586,
+            "baseline_p2": 0.163898,
+            "baseline_p5": 0.033776,
+            "baseline_p10": 0.013843
+          },
+          "unique_buyers_lt_3": {
+            "n": 961,
+            "p2": 0.077003
+          }
+        }
+      },
+      "pairwise": {
+        "30s": {
+          "buyers_plus_net_flow_n": 413,
+          "buyers_plus_net_flow_p10": 0.016949,
+          "price_up_no_buyers_n": 66,
+          "price_up_no_buyers_p10": 0.0
+        },
+        "60s": {
+          "buyers_plus_net_flow_n": 449,
+          "buyers_plus_net_flow_p10": 0.026726,
+          "price_up_no_buyers_n": 59,
+          "price_up_no_buyers_p10": 0.0
+        },
+        "2m": {
+          "buyers_plus_net_flow_n": 448,
+          "buyers_plus_net_flow_p10": 0.037946,
+          "price_up_no_buyers_n": 28,
+          "price_up_no_buyers_p10": 0.0
+        },
+        "5m": {
+          "buyers_plus_net_flow_n": 429,
+          "buyers_plus_net_flow_p10": 0.048951,
+          "price_up_no_buyers_n": 18,
+          "price_up_no_buyers_p10": 0.0
+        }
+      }
+    }
+  },
+  "dataset": "Slinky21/Pumpfun_Memecoin_Corpus"
+}

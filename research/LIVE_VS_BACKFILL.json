@@ -1,0 +1,115 @@
+{
+  "raw_min": 47625122,
+  "raw_max": 47643291,
+  "note": "Alchemy free eth_getLogs max 10-block span; compared first and last 80 session blocks",
+  "windows": [
+    {
+      "from": 47625122,
+      "to": 47625201,
+      "events": {
+        "TokenLaunched": {
+          "live": 2,
+          "backfill": 2,
+          "intersection": 2,
+          "live_only": 0,
+          "backfill_only": 0,
+          "match_pct": 100.0
+        },
+        "CurveBuy": {
+          "live": 40,
+          "backfill": 57,
+          "intersection": 40,
+          "live_only": 0,
+          "backfill_only": 17,
+          "match_pct": 70.175
+        },
+        "CurveSell": {
+          "live": 43,
+          "backfill": 55,
+          "intersection": 43,
+          "live_only": 0,
+          "backfill_only": 12,
+          "match_pct": 78.182
+        },
+        "SnipeTaxCharged": {
+          "live": 0,
+          "backfill": 0,
+          "intersection": 0,
+          "live_only": 0,
+          "backfill_only": 0,
+          "match_pct": null
+        },
+        "LaunchSwept": {
+          "live": 0,
+          "backfill": 0,
+          "intersection": 0,
+          "live_only": 0,
+          "backfill_only": 0,
+          "match_pct": null
+        },
+        "PoolGraduated": {
+          "live": 0,
+          "backfill": 0,
+          "intersection": 0,
+          "live_only": 0,
+          "backfill_only": 0,
+          "match_pct": null
+        }
+      }
+    },
+    {
+      "from": 47643212,
+      "to": 47643291,
+      "events": {
+        "TokenLaunched": {
+          "live": 6,
+          "backfill": 6,
+          "intersection": 6,
+          "live_only": 0,
+          "backfill_only": 0,
+          "match_pct": 100.0
+        },
+        "CurveBuy": {
+          "live": 49,
+          "backfill": 49,
+          "intersection": 49,
+          "live_only": 0,
+          "backfill_only": 0,
+          "match_pct": 100.0
+        },
+        "CurveSell": {
+          "live": 25,
+          "backfill": 25,
+          "intersection": 25,
+          "live_only": 0,
+          "backfill_only": 0,
+          "match_pct": 100.0
+        },
+        "SnipeTaxCharged": {
+          "live": 1,
+          "backfill": 1,
+          "intersection": 1,
+          "live_only": 0,
+          "backfill_only": 0,
+          "match_pct": 100.0
+        },
+        "LaunchSwept": {
+          "live": 0,
+          "backfill": 0,
+          "intersection": 0,
+          "live_only": 0,
+          "backfill_only": 0,
+          "match_pct": null
+        },
+        "PoolGraduated": {
+          "live": 0,
+          "backfill": 0,
+          "intersection": 0,
+          "live_only": 0,
+          "backfill_only": 0,
+          "match_pct": null
+        }
+      }
+    }
+  ]
+}

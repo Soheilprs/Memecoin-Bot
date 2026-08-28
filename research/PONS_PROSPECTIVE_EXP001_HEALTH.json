@@ -1,0 +1,22 @@
+{
+  "experiment_id": "PONS_PROSPECTIVE_EXP002_QUAL",
+  "status": "RUNNING",
+  "config_hash": "8ca9056be0a9493859f2b247ce389e01ad583e59d0a6a65d2e44df34e34cd943",
+  "git_commit": "485a8584363a9e8884c50f20c8b7d5a3a3a34571c1a0eb2b4a915a4e110173a0",
+  "started_at": "2026-08-28T08:04:25.020144Z",
+  "start_block": 48141944,
+  "current_block": null,
+  "elapsed_secs": 15777,
+  "valid_uptime_secs": 563,
+  "restarts": 0,
+  "tokens": 25,
+  "signals": 1776,
+  "orders": 128,
+  "fills": 128,
+  "positions_open": 103,
+  "positions_closed": 25,
+  "outcomes_pending": 0,
+  "outcomes_mature": 0,
+  "outcomes_censored": 516,
+  "note": "operational only; coverage=0.0357 threshold=0.95; entry_fills=128 positions_opened=128"
+}

@@ -1,0 +1,47 @@
+{
+  "dataset_name": "Slinky21/Pumpfun_Memecoin_Corpus",
+  "source": "huggingface",
+  "source_url": "https://huggingface.co/datasets/Slinky21/Pumpfun_Memecoin_Corpus",
+  "publisher": "Slink Dev (slink21taken)",
+  "license": "CC BY 4.0 (README); Hugging Face card also lists MIT",
+  "retrieved_at": "2026-08-27",
+  "original_files": [
+    {"path": "KNOWN_ISSUES.md", "size_bytes": 14974, "sha256": "82534ee226e1447e5ab0c0eb4b1b5453f0241aa5426d561b8f4b00314d1da299"},
+    {"path": "README.source.md", "size_bytes": 8253, "sha256": "0cd64ffd8c20b6aee2ecb70c956d47fa7a24e786f44c7c84f85b4c4fffbc7639"},
+    {"path": "migrations.parquet", "size_bytes": 480591, "sha256": "ef5d5141fd94acbcd121bed50e39e525cf7777d25338fc9852a67fd8a085105d"},
+    {"path": "tokens.parquet", "size_bytes": 214405469, "sha256": "c005d86d424013e5c78701161b025f3d8c3d472afb61466e0ad6fd5afe9e8ea6"},
+    {"path": "trades/trades-00017.parquet", "size_bytes": 27991939, "sha256": "3e48808f2ee97c7238af48446ef1ee2028b93fed58f11715dce6ef5a15fbe580"}
+  ],
+  "declared_period_start": "2026-06-05",
+  "declared_period_end": "2026-07-14",
+  "observed_period_start": "2026-06-05T09:12:26.343743Z",
+  "observed_period_end": "2026-07-14T15:01:42.759724Z",
+  "raw_row_counts": {
+    "tokens_observed": 798430,
+    "tokens_unique_mints": 798430,
+    "migrations_observed": 5701,
+    "trades_shard_00017_observed": 158405,
+    "trades_declared_all_shards": 33581765,
+    "snapshots_declared": 26934864,
+    "postgard_outcomes_declared": 5669
+  },
+  "token_count": 798430,
+  "trade_count": 33581765,
+  "graduation_count": 5689,
+  "dataset_hash": "5ae3cbca393b1556305982a0833adb31b6d8ab83b9ab1709d530341b4cd21b78",
+  "format": "parquet",
+  "schema_version": "slinky21-2026-07",
+  "importer_version": "7.1.0",
+  "known_limitations": [
+    "DECODED_RESEARCH_CORPUS: not raw Solana transactions",
+    "Trades include tx_signature but not slot or instruction index; identity_quality=DERIVED",
+    "sol_amount NULL ~7.03%; inconsistent ~3.38%",
+    "Jul 3 2026 websocket outage (zero trades)",
+    "Do not use snapshots.parquet heartbeat carry-forwards as fills",
+    "Do not use entry_price_*_usd (graduation leak)",
+    "wallet_stats activity columns are stale",
+    "Full 6.7GB corpus not committed to Git; this machine acquired tokens+migrations+trades-00017 only",
+    "Launch days missing in tokens.detected_at: 2026-06-18, 2026-07-03, 2026-07-12"
+  ],
+  "source_kind": "DECODED_RESEARCH_CORPUS"
+}

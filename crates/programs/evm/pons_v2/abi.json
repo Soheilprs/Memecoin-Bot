@@ -1,0 +1,81 @@
+[
+  {
+    "type": "event",
+    "name": "TokenLaunched",
+    "anonymous": false,
+    "inputs": [
+      { "name": "token", "type": "address", "indexed": true },
+      { "name": "curve", "type": "address", "indexed": true },
+      { "name": "deployer", "type": "address", "indexed": true },
+      { "name": "pairToken", "type": "address", "indexed": false },
+      { "name": "launchConfigId", "type": "uint256", "indexed": false },
+      { "name": "graduationThreshold", "type": "uint256", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "LaunchSwept",
+    "anonymous": false,
+    "inputs": [
+      { "name": "token", "type": "address", "indexed": true },
+      { "name": "quoteOut", "type": "uint256", "indexed": false },
+      { "name": "tokenOut", "type": "uint256", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "PoolGraduated",
+    "anonymous": false,
+    "inputs": [
+      { "name": "token", "type": "address", "indexed": true },
+      { "name": "positionId", "type": "uint256", "indexed": false },
+      { "name": "tokenAmount", "type": "uint256", "indexed": false },
+      { "name": "pairTokenAmount", "type": "uint256", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "CurveBuy",
+    "anonymous": false,
+    "inputs": [
+      { "name": "buyer", "type": "address", "indexed": true },
+      { "name": "recipient", "type": "address", "indexed": true },
+      { "name": "quoteIn", "type": "uint256", "indexed": false },
+      { "name": "tokensOut", "type": "uint256", "indexed": false },
+      { "name": "fee", "type": "uint256", "indexed": false },
+      { "name": "tax", "type": "uint256", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "CurveSell",
+    "anonymous": false,
+    "inputs": [
+      { "name": "seller", "type": "address", "indexed": true },
+      { "name": "recipient", "type": "address", "indexed": true },
+      { "name": "tokensIn", "type": "uint256", "indexed": false },
+      { "name": "quoteOut", "type": "uint256", "indexed": false },
+      { "name": "fee", "type": "uint256", "indexed": false },
+      { "name": "tax", "type": "uint256", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "SnipeTaxCharged",
+    "anonymous": false,
+    "inputs": [
+      { "name": "buyer", "type": "address", "indexed": true },
+      { "name": "amount", "type": "uint256", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "CurveCompleted",
+    "anonymous": false,
+    "inputs": [
+      { "name": "recipient", "type": "address", "indexed": false },
+      { "name": "quoteOut", "type": "uint256", "indexed": false },
+      { "name": "tokenOut", "type": "uint256", "indexed": false }
+    ]
+  }
+]

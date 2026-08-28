@@ -1,0 +1,27 @@
+{
+  "protocol": "pons_v2_bonding_curve",
+  "chain": "robinhood",
+  "version": "v2-bondingcurve-getters-1",
+  "source": "https://github.com/ponsdotdev/ponsfamily/blob/main/contractsV2/src/v2/PonsV2BondingCurve.sol",
+  "retrieved_at": "2026-08-27T00:00:00Z",
+  "notes": "Verified view/getters. quoteReserve from getReserves() = phantomQuote + trackedQuote - quoteFeeBalance - creatorTaxBalance. Selectors keccak-verified 2026-08-27.",
+  "functions": [
+    {"name": "getReserves", "selector": "0x0902f1ac", "returns": ["uint256 quoteReserve", "uint256 tokenReserve"]},
+    {"name": "realQuoteReserve", "selector": "0x4f1f58fd", "returns": ["uint256"]},
+    {"name": "phantomQuote", "selector": "0xc57eadfc", "returns": ["uint256"]},
+    {"name": "graduationThreshold", "selector": "0x8b0bc501", "returns": ["uint256"]},
+    {"name": "graduated", "selector": "0xe7c2b772", "returns": ["bool"]},
+    {"name": "feeBps", "selector": "0x24a9d853", "returns": ["uint256"]},
+    {"name": "creatorTaxBps", "selector": "0xc1bb8901", "returns": ["uint256"]},
+    {"name": "sellableTokens", "selector": "0x808bcddc", "returns": ["uint256"]},
+    {"name": "trackedQuote", "selector": "0xca52b0b7", "returns": ["uint256"]},
+    {"name": "trackedTokens", "selector": "0x4c37ef23", "returns": ["uint256"]},
+    {"name": "reservedTokens", "selector": "0x15a55347", "returns": ["uint256"]},
+    {"name": "token", "selector": "0xfc0c546a", "returns": ["address"]},
+    {"name": "pairToken", "selector": "0x3de35b79", "returns": ["address"]},
+    {"name": "readyToGraduate", "selector": "0xc68360a5", "returns": ["bool"]},
+    {"name": "quoteReserve", "selector": "0x9da771f4", "returns": ["uint256"]},
+    {"name": "tokenReserve", "selector": "0xcbcb3171", "returns": ["uint256"]},
+    {"name": "isNativeQuote", "selector": "0xdc08e094", "returns": ["bool"]}
+  ]
+}

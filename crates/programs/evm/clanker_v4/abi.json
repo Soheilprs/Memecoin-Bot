@@ -1,0 +1,89 @@
+[
+  {
+    "type": "event",
+    "name": "TokenCreated",
+    "anonymous": false,
+    "inputs": [
+      {
+        "name": "msgSender",
+        "type": "address",
+        "indexed": false
+      },
+      {
+        "name": "tokenAddress",
+        "type": "address",
+        "indexed": true
+      },
+      {
+        "name": "tokenAdmin",
+        "type": "address",
+        "indexed": true
+      },
+      {
+        "name": "tokenImage",
+        "type": "string",
+        "indexed": false
+      },
+      {
+        "name": "tokenName",
+        "type": "string",
+        "indexed": false
+      },
+      {
+        "name": "tokenSymbol",
+        "type": "string",
+        "indexed": false
+      },
+      {
+        "name": "tokenMetadata",
+        "type": "string",
+        "indexed": false
+      },
+      {
+        "name": "tokenContext",
+        "type": "string",
+        "indexed": false
+      },
+      {
+        "name": "startingTick",
+        "type": "int24",
+        "indexed": false
+      },
+      {
+        "name": "poolHook",
+        "type": "address",
+        "indexed": false
+      },
+      {
+        "name": "poolId",
+        "type": "bytes32",
+        "indexed": false
+      },
+      {
+        "name": "pairedToken",
+        "type": "address",
+        "indexed": false
+      },
+      {
+        "name": "locker",
+        "type": "address",
+        "indexed": false
+      },
+      {
+        "name": "mevModule",
+        "type": "address",
+        "indexed": false
+      },
+      {
+        "name": "extensionsSupply",
+        "type": "uint256",
+        "indexed": false
+      },
+      {
+        "name": "extensions",
+        "type": "address[]",
+        "indexed": false
+      }
+    ]
+  }
+]

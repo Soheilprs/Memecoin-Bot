@@ -1,0 +1,47 @@
+{
+  "pumpfun": {
+    "protocol": "pumpfun",
+    "chain": "solana",
+    "version": "0.1.0",
+    "source": "https://raw.githubusercontent.com/pump-fun/pump-public-docs/refs/heads/main/idl/pump.json",
+    "retrieved_at": "2026-08-27T00:00:00Z",
+    "sha256": "b90bc471327f671449271d5d1d42354d1fae6f5a06502f5834459a3108138e49",
+    "path": "crates/programs/solana/pumpfun/idl.json"
+  },
+  "pons_v2": {
+    "protocol": "pons_v2",
+    "chain": "robinhood",
+    "version": "v2-tokenlaunched-1",
+    "source": "Bitquery Pons API docs + keccak preimage TokenLaunched(address,address,address,address,uint256,uint256); topic0 0x8d4aad4953d0ca700d468f3753aa14432d1b35b43ec6409f051fb6aa43a89607 verified on-chain 2026-08-27",
+    "retrieved_at": "2026-08-27T00:00:00Z",
+    "sha256": "90e248f7e3817e7b13ad1a1a4d163e703792eda79680f8394319ebfe266d574a",
+    "path": "crates/programs/evm/pons_v2/abi.json"
+  },
+  "uniswap_v4": {
+    "protocol": "uniswap_v4",
+    "chain": "evm",
+    "version": "v4-poolmanager-1",
+    "source": "Uniswap v4 core PoolManager Initialize/Swap events; topic0s keccak-verified 2026-08-27",
+    "retrieved_at": "2026-08-27T00:00:00Z",
+    "sha256": "dca56fd6a691d1008b52ca6c2a550efb46ffc4cea20e2a3eb260633f9d2679c3",
+    "path": "crates/programs/evm/uniswap_v4/abi.json"
+  },
+  "pons_v2_bonding_curve": {
+    "protocol": "pons_v2_bonding_curve",
+    "chain": "robinhood",
+    "version": "v2-bondingcurve-getters-1",
+    "source": "https://github.com/ponsdotdev/ponsfamily/blob/main/contractsV2/src/v2/PonsV2BondingCurve.sol",
+    "retrieved_at": "2026-08-27T00:00:00Z",
+    "sha256": "774d87e103b50701373d66f7030bddc45ff203f82ceba04dd090bae5915b674b",
+    "path": "crates/programs/evm/pons_v2/curve_views.json"
+  },
+  "clanker_v4": {
+    "protocol": "clanker_v4",
+    "chain": "base",
+    "version": "v4-tokencreated-1",
+    "source": "https://raw.githubusercontent.com/clanker-devco/v4-contracts/main/src/interfaces/IClanker.sol TokenCreated event",
+    "retrieved_at": "2026-08-27T00:00:00Z",
+    "sha256": "37c3c9e72a9d85a9d7838de8d5d1e7355f4f7f314db2a77b6ee79e828c3bf123",
+    "path": "crates/programs/evm/clanker_v4/abi.json"
+  }
+}

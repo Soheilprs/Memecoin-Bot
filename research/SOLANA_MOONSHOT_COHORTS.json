@@ -1,0 +1,518 @@
+{
+  "population": {
+    "all_launches": 798430,
+    "zero_trade": 176130,
+    "active": 21871,
+    "invalid_labels": 462,
+    "usable_labels": 21409,
+    "active_in_processed_shards": 21871
+  },
+  "cohorts": {
+    "<2X": 17356,
+    "2X+": 2873,
+    "20X+": 255,
+    "10X+": 255,
+    "5X+": 670
+  },
+  "baseline": {
+    "p2": 0.189313,
+    "p5": 0.055117,
+    "p10": 0.023822
+  },
+  "lifts": {
+    "30s": {
+      "unique_buyers_ge_3": {
+        "n": 6974,
+        "p2": 0.214941,
+        "p5": 0.043017,
+        "p10": 0.012618,
+        "baseline_p2": 0.189313,
+        "baseline_p5": 0.055117,
+        "baseline_p10": 0.023822
+      },
+      "unique_buyers_lt_3": {
+        "n": 14435,
+        "p2": 0.176931
+      }
+    },
+    "60s": {
+      "unique_buyers_ge_3": {
+        "n": 8945,
+        "p2": 0.263611,
+        "p5": 0.071437,
+        "p10": 0.026607,
+        "baseline_p2": 0.189313,
+        "baseline_p5": 0.055117,
+        "baseline_p10": 0.023822
+      },
+      "unique_buyers_lt_3": {
+        "n": 12464,
+        "p2": 0.135992
+      }
+    },
+    "2m": {
+      "unique_buyers_ge_3": {
+        "n": 10139,
+        "p2": 0.290167,
+        "p5": 0.089259,
+        "p10": 0.038169,
+        "baseline_p2": 0.189313,
+        "baseline_p5": 0.055117,
+        "baseline_p10": 0.023822
+      },
+      "unique_buyers_lt_3": {
+        "n": 11270,
+        "p2": 0.09858
+      }
+    },
+    "5m": {
+      "unique_buyers_ge_3": {
+        "n": 10830,
+        "p2": 0.29843,
+        "p5": 0.096122,
+        "p10": 0.043583,
+        "baseline_p2": 0.189313,
+        "baseline_p5": 0.055117,
+        "baseline_p10": 0.023822
+      },
+      "unique_buyers_lt_3": {
+        "n": 10579,
+        "p2": 0.077607
+      }
+    }
+  },
+  "pairwise": {
+    "30s": {
+      "buyers_plus_net_flow_n": 6112,
+      "buyers_plus_net_flow_p10": 0.025851,
+      "price_up_no_buyers_n": 424,
+      "price_up_no_buyers_p10": 0.004717
+    },
+    "60s": {
+      "buyers_plus_net_flow_n": 6554,
+      "buyers_plus_net_flow_p10": 0.038755,
+      "price_up_no_buyers_n": 400,
+      "price_up_no_buyers_p10": 0.0
+    },
+    "2m": {
+      "buyers_plus_net_flow_n": 6727,
+      "buyers_plus_net_flow_p10": 0.051137,
+      "price_up_no_buyers_n": 231,
+      "price_up_no_buyers_p10": 0.0
+    },
+    "5m": {
+      "buyers_plus_net_flow_n": 6665,
+      "buyers_plus_net_flow_p10": 0.061065,
+      "price_up_no_buyers_n": 159,
+      "price_up_no_buyers_p10": 0.0
+    }
+  },
+  "execution_pnl_claimed": false,
+  "capabilities": {
+    "FEATURE_VALID": true,
+    "DESCRIPTIVE_OUTCOME_VALID": true,
+    "EXECUTION_VALID": false
+  },
+  "hypotheses": {
+    "n": 21409,
+    "H1_buyers_ge_3": {
+      "n": 6974,
+      "p2": 0.214941,
+      "p10": 0.012618
+    },
+    "H1_complement": {
+      "n": 14435,
+      "p2": 0.176931,
+      "p10": 0.029234
+    },
+    "H2_buyers_plus_imbalance": {
+      "n": 6112,
+      "p2": 0.337042,
+      "p10": 0.025851
+    },
+    "H3_price_without_buyers": {
+      "n": 424,
+      "p2": 0.082547,
+      "p10": 0.004717
+    },
+    "H4_low_participation": {
+      "n": 14435,
+      "p2": 0.176931,
+      "p10": 0.029234
+    },
+    "predeclared": true
+  },
+  "shards_processed": [
+    "trades-00016.parquet",
+    "trades-00017.parquet"
+  ],
+  "shards_available_declared": 18,
+  "per_shard": {
+    "trades-00016.parquet": {
+      "checksum": "db90859dbd371141a6e8c2f673d478462ef79da2ace6a1bcfa6fa06e91c2a9a0",
+      "row_groups_complete": 2,
+      "rows": 1966080,
+      "tokens_affected": 20109,
+      "feature_rows_emitted": 80436,
+      "label_rows_emitted": 19664,
+      "hypotheses": {
+        "n": 19664,
+        "H1_buyers_ge_3": {
+          "n": 6383,
+          "p2": 0.215729,
+          "p10": 0.01269
+        },
+        "H1_complement": {
+          "n": 13281,
+          "p2": 0.17958,
+          "p10": 0.030419
+        },
+        "H2_buyers_plus_imbalance": {
+          "n": 5699,
+          "p2": 0.33462,
+          "p10": 0.026496
+        },
+        "H3_price_without_buyers": {
+          "n": 358,
+          "p2": 0.089385,
+          "p10": 0.005587
+        },
+        "H4_low_participation": {
+          "n": 13281,
+          "p2": 0.17958,
+          "p10": 0.030419
+        },
+        "predeclared": true
+      },
+      "cohorts": {
+        "<2X": 15902,
+        "2X+": 2644,
+        "20X+": 246,
+        "10X+": 239,
+        "5X+": 633
+      },
+      "baseline": {
+        "p2": 0.191314,
+        "p5": 0.056855,
+        "p10": 0.024664
+      },
+      "lifts": {
+        "30s": {
+          "unique_buyers_ge_3": {
+            "n": 6383,
+            "p2": 0.215729,
+            "p5": 0.043867,
+            "p10": 0.01269,
+            "baseline_p2": 0.191314,
+            "baseline_p5": 0.056855,
+            "baseline_p10": 0.024664
+          },
+          "unique_buyers_lt_3": {
+            "n": 13281,
+            "p2": 0.17958
+          }
+        },
+        "60s": {
+          "unique_buyers_ge_3": {
+            "n": 8221,
+            "p2": 0.26481,
+            "p5": 0.073227,
+            "p10": 0.027004,
+            "baseline_p2": 0.191314,
+            "baseline_p5": 0.056855,
+            "baseline_p10": 0.024664
+          },
+          "unique_buyers_lt_3": {
+            "n": 11443,
+            "p2": 0.138513
+          }
+        },
+        "2m": {
+          "unique_buyers_ge_3": {
+            "n": 9338,
+            "p2": 0.292996,
+            "p5": 0.092097,
+            "p10": 0.039302,
+            "baseline_p2": 0.191314,
+            "baseline_p5": 0.056855,
+            "baseline_p10": 0.024664
+          },
+          "unique_buyers_lt_3": {
+            "n": 10326,
+            "p2": 0.099361
+          }
+        },
+        "5m": {
+          "unique_buyers_ge_3": {
+            "n": 9991,
+            "p2": 0.301371,
+            "p5": 0.098589,
+            "p10": 0.04474,
+            "baseline_p2": 0.191314,
+            "baseline_p5": 0.056855,
+            "baseline_p10": 0.024664
+          },
+          "unique_buyers_lt_3": {
+            "n": 9673,
+            "p2": 0.077639
+          }
+        }
+      },
+      "pairwise": {
+        "30s": {
+          "buyers_plus_net_flow_n": 5699,
+          "buyers_plus_net_flow_p10": 0.026496,
+          "price_up_no_buyers_n": 358,
+          "price_up_no_buyers_p10": 0.005587
+        },
+        "60s": {
+          "buyers_plus_net_flow_n": 6107,
+          "buyers_plus_net_flow_p10": 0.039627,
+          "price_up_no_buyers_n": 341,
+          "price_up_no_buyers_p10": 0.0
+        },
+        "2m": {
+          "buyers_plus_net_flow_n": 6282,
+          "buyers_plus_net_flow_p10": 0.051894,
+          "price_up_no_buyers_n": 203,
+          "price_up_no_buyers_p10": 0.0
+        },
+        "5m": {
+          "buyers_plus_net_flow_n": 6244,
+          "buyers_plus_net_flow_p10": 0.061819,
+          "price_up_no_buyers_n": 144,
+          "price_up_no_buyers_p10": 0.0
+        }
+      }
+    },
+    "trades-00017.parquet": {
+      "checksum": "3e48808f2ee97c7238af48446ef1ee2028b93fed58f11715dce6ef5a15fbe580",
+      "row_groups_complete": 1,
+      "rows": 158060,
+      "tokens_affected": 1824,
+      "feature_rows_emitted": 7296,
+      "label_rows_emitted": 1806,
+      "hypotheses": {
+        "n": 1806,
+        "H1_buyers_ge_3": {
+          "n": 591,
+          "p2": 0.20643,
+          "p10": 0.010152
+        },
+        "H1_complement": {
+          "n": 1215,
+          "p2": 0.14321,
+          "p10": 0.015638
+        },
+        "H2_buyers_plus_imbalance": {
+          "n": 413,
+          "p2": 0.372881,
+          "p10": 0.016949
+        },
+        "H3_price_without_buyers": {
+          "n": 66,
+          "p2": 0.045455,
+          "p10": 0.0
+        },
+        "H4_low_participation": {
+          "n": 1215,
+          "p2": 0.14321,
+          "p10": 0.015638
+        },
+        "predeclared": true
+      },
+      "cohorts": {
+        "<2X": 1510,
+        "2X+": 235,
+        "5X+": 36,
+        "10X+": 16,
+        "20X+": 9
+      },
+      "baseline": {
+        "p2": 0.163898,
+        "p5": 0.033776,
+        "p10": 0.013843
+      },
+      "lifts": {
+        "30s": {
+          "unique_buyers_ge_3": {
+            "n": 591,
+            "p2": 0.20643,
+            "p5": 0.032149,
+            "p10": 0.010152,
+            "baseline_p2": 0.163898,
+            "baseline_p5": 0.033776,
+            "baseline_p10": 0.013843
+          },
+          "unique_buyers_lt_3": {
+            "n": 1215,
+            "p2": 0.14321
+          }
+        },
+        "60s": {
+          "unique_buyers_ge_3": {
+            "n": 725,
+            "p2": 0.249655,
+            "p5": 0.049655,
+            "p10": 0.02069,
+            "baseline_p2": 0.163898,
+            "baseline_p5": 0.033776,
+            "baseline_p10": 0.013843
+          },
+          "unique_buyers_lt_3": {
+            "n": 1081,
+            "p2": 0.106383
+          }
+        },
+        "2m": {
+          "unique_buyers_ge_3": {
+            "n": 804,
+            "p2": 0.257463,
+            "p5": 0.054726,
+            "p10": 0.023632,
+            "baseline_p2": 0.163898,
+            "baseline_p5": 0.033776,
+            "baseline_p10": 0.013843
+          },
+          "unique_buyers_lt_3": {
+            "n": 1002,
+            "p2": 0.088822
+          }
+        },
+        "5m": {
+          "unique_buyers_ge_3": {
+            "n": 845,
+            "p2": 0.262722,
+            "p5": 0.065089,
+            "p10": 0.029586,
+            "baseline_p2": 0.163898,
+            "baseline_p5": 0.033776,
+            "baseline_p10": 0.013843
+          },
+          "unique_buyers_lt_3": {
+            "n": 961,
+            "p2": 0.077003
+          }
+        }
+      },
+      "pairwise": {
+        "30s": {
+          "buyers_plus_net_flow_n": 413,
+          "buyers_plus_net_flow_p10": 0.016949,
+          "price_up_no_buyers_n": 66,
+          "price_up_no_buyers_p10": 0.0
+        },
+        "60s": {
+          "buyers_plus_net_flow_n": 449,
+          "buyers_plus_net_flow_p10": 0.026726,
+          "price_up_no_buyers_n": 59,
+          "price_up_no_buyers_p10": 0.0
+        },
+        "2m": {
+          "buyers_plus_net_flow_n": 448,
+          "buyers_plus_net_flow_p10": 0.037946,
+          "price_up_no_buyers_n": 28,
+          "price_up_no_buyers_p10": 0.0
+        },
+        "5m": {
+          "buyers_plus_net_flow_n": 429,
+          "buyers_plus_net_flow_p10": 0.048951,
+          "price_up_no_buyers_n": 18,
+          "price_up_no_buyers_p10": 0.0
+        }
+      }
+    }
+  },
+  "pooled_hypotheses_from_shards": {
+    "predeclared": true,
+    "n": 21470,
+    "H1_buyers_ge_3": {
+      "n": 6974,
+      "p2": 0.214941,
+      "p10": 0.012475,
+      "note": "weighted by per-shard n; tokens spanning shards may be double-counted"
+    },
+    "H1_complement": {
+      "n": 14496,
+      "p2": 0.176532,
+      "p10": 0.02918,
+      "note": "weighted by per-shard n; tokens spanning shards may be double-counted"
+    },
+    "H2_buyers_plus_imbalance": {
+      "n": 6112,
+      "p2": 0.337205,
+      "p10": 0.025851,
+      "note": "weighted by per-shard n; tokens spanning shards may be double-counted"
+    },
+    "H3_price_without_buyers": {
+      "n": 424,
+      "p2": 0.082547,
+      "p10": 0.004717,
+      "note": "weighted by per-shard n; tokens spanning shards may be double-counted"
+    },
+    "H4_low_participation": {
+      "n": 14496,
+      "p2": 0.176532,
+      "p10": 0.02918,
+      "note": "weighted by per-shard n; tokens spanning shards may be double-counted"
+    }
+  },
+  "h1_h4_stability": {
+    "H1": {
+      "verdict": "CONSISTENT_DIRECTION",
+      "shards": [
+        {
+          "shard": "trades-00016.parquet",
+          "direction": "POS_GT_NEG",
+          "p2_pos": 0.215729,
+          "p2_neg": 0.17958
+        },
+        {
+          "shard": "trades-00017.parquet",
+          "direction": "POS_GT_NEG",
+          "p2_pos": 0.20643,
+          "p2_neg": 0.14321
+        }
+      ],
+      "n_comparable": 2
+    },
+    "H2": {
+      "verdict": "CONSISTENT_DIRECTION",
+      "shards": [
+        {
+          "shard": "trades-00016.parquet",
+          "direction": "POS_GT_NEG",
+          "p2_pos": 0.33462,
+          "p2_neg": 0.089385
+        },
+        {
+          "shard": "trades-00017.parquet",
+          "direction": "POS_GT_NEG",
+          "p2_pos": 0.372881,
+          "p2_neg": 0.045455
+        }
+      ],
+      "n_comparable": 2
+    },
+    "H4": {
+      "verdict": "OPPOSITE",
+      "shards": [
+        {
+          "shard": "trades-00016.parquet",
+          "direction": "POS_LT_NEG",
+          "p2_pos": 0.17958,
+          "p2_neg": 0.215729
+        },
+        {
+          "shard": "trades-00017.parquet",
+          "direction": "POS_LT_NEG",
+          "p2_pos": 0.14321,
+          "p2_neg": 0.20643
+        }
+      ],
+      "n_comparable": 2
+    }
+  },
+  "shard_limitation": "processed 2/18 local shards; not FULL_CORPUS_COMPLETE",
+  "solana_feature_verdict": "EXPANDED"
+}

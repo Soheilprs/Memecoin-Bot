@@ -1,0 +1,27 @@
+{
+  "provenance": {
+    "chain": "robinhood",
+    "protocol": "pons_v2",
+    "event": "LaunchSwept",
+    "factory": "0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e",
+    "source": "eth_getLogs robinhood public rpc",
+    "captured_at": "2026-08-27"
+  },
+  "chain": "robinhood",
+  "chain_id": 4663,
+  "address": "0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e",
+  "topics": [
+    "0xcdb72f157fd3666758a6ce201387ffb52038c7562e4fff352828da1096c4b6b4",
+    "0x0000000000000000000000006f086c5bd71de7d80625a21b6973ae411acf64a7"
+  ],
+  "data": "0x000000000000000000000000000000000000000000000003e9f9ed77cf3406b4000000000000000000000000000000000000000000ec565a76cddb7f1db6db6d",
+  "block_number": 47302618,
+  "block_hash": "0x1c3c52f3cd8cb99e5e2ba9a7a77e56c8e3ac304468288acec646a2bfcb1f9115",
+  "block_timestamp": 1787819563,
+  "transaction_hash": "0x1054de60e3d0cc9b4b8c728246e220a603042cf9185fa3740ddfd23880bd3dd8",
+  "transaction_index": 7,
+  "log_index": 51,
+  "removed": false,
+  "tx_from": "0x6da3b5d44b1432608ebcb11f17546292f5a52757",
+  "gas_used": 860534
+}

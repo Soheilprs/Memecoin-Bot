@@ -1,0 +1,28 @@
+{
+  "provenance": {
+    "chain": "robinhood",
+    "protocol": "pons_v2",
+    "event": "CurveBuy",
+    "factory": "0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e",
+    "source": "eth_getLogs robinhood public rpc",
+    "captured_at": "2026-08-27"
+  },
+  "chain": "robinhood",
+  "chain_id": 4663,
+  "address": "0x1126588efb6334944cd46db3f0b958f05e54ab0c",
+  "topics": [
+    "0xec36bf571f136799e8dc0b0b8bea4b04d8bd3d43de838aab0d5fc21d4cbfc455",
+    "0x00000000000000000000000081da6bcd98ae46621a1e9743a3f51b10b7e16d97",
+    "0x00000000000000000000000081da6bcd98ae46621a1e9743a3f51b10b7e16d97"
+  ],
+  "data": "0x000000000000000000000000000000000000000000000000018b470032730fcf000000000000000000000000000000000000000000008c7ab96882b74345934e0000000000000000000000000000000000000000000000000003f3e8f643b5eb00000000000000000000000000000000000000000000000000012f92b0478360",
+  "block_number": 47325947,
+  "block_hash": "0x4e38cf3ffdc34e5ce4e229e9854c0860738791ac6319485469c0c255d3932e49",
+  "block_timestamp": 1787821917,
+  "transaction_hash": "0x971851a1268d9eb30df93fab7d5d63d14e63a6b2e73f894de565c9057b4d3c98",
+  "transaction_index": 8,
+  "log_index": 50,
+  "removed": false,
+  "tx_from": "0x7ad9ae888ffed0385dfa16a52a044ed209195aa1",
+  "gas_used": 579604
+}

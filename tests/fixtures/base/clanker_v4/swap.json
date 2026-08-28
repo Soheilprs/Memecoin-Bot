@@ -1,0 +1,30 @@
+{
+  "chain": "base",
+  "chain_id": 8453,
+  "address": "0x498581ff718922c3f8e6a244956af099b2652b2b",
+  "topics": [
+    "0x40e9cecb9f5f1f1c5b9c97dec2917b7ee92e57ba5563708daca94dd84ad7112f",
+    "0x66f8def8ee425ea3fa00a12579f57bd091a1b26100f4eab3de8b964c935875cf",
+    "0x0000000000000000000000006ff5693b99212da76ad316178a184ab56d299b43"
+  ],
+  "data": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffff188ed9a1b70000000000000000000000000000000000000000000002118a1c4e7de2a0ffea000000000000000000000000000000000001892be9910bd5e9828d24e328637e0000000000000000000000000000000000000000000021d6dc87a24cff4a05b200000000000000000000000000000000000000000000000000000000000383ff0000000000000000000000000000000000000000000000000000000000007530",
+  "block_number": 50506751,
+  "block_hash": "0x60bdad145c4366103654b3f778a09cf4bc8bb878defb79a203b6b0a5bc24e426",
+  "block_timestamp": 1787802849,
+  "transaction_hash": "0x1ff9fc40fcaeeffa3c52dea8df3d99f8c4102b3dcbaddbefbed83dc478a8b277",
+  "transaction_index": 35,
+  "log_index": 159,
+  "removed": false,
+  "tx_from": "0x16d4e81e840d00f4135f13d3273967b1d4d00478",
+  "provenance": {
+    "chain": "base",
+    "protocol": "clanker_v4",
+    "event": "Swap",
+    "pool_manager": "0x498581fF718922c3f8e6A244956aF099B2652b2b",
+    "pool_id": "0x66f8def8ee425ea3fa00a12579f57bd091a1b26100f4eab3de8b964c935875cf",
+    "clanker_token": "0xcd76779d8629240d4e48a440b0919753fefa3b07",
+    "token_created_tx": "0x1ff9fc40fcaeeffa3c52dea8df3d99f8c4102b3dcbaddbefbed83dc478a8b277",
+    "source": "eth_getLogs Base PoolManager Swap filtered by Clanker TokenCreated poolId",
+    "captured_at": "2026-08-27"
+  }
+}

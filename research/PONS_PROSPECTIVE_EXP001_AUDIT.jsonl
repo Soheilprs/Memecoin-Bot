@@ -1,0 +1,16 @@
+{"at":"2026-08-28T00:21:05.823015Z","event":"EXPERIMENT_LOCKED","payload":{"config_hash":"35861e68d7f0a1181a19121e8be65bee591d437b445f7c02ff2a326ac1131c33"}}
+{"at":"2026-08-28T00:21:45.599279Z","event":"EXPERIMENT_STARTED","payload":{"start_block":47866928}}
+{"at":"2026-08-28T00:23:54.114714Z","event":"PROCESS_RESTARTED","payload":{"restarts":1}}
+{"at":"2026-08-28T00:25:32.236050Z","event":"PROCESS_RESTARTED","payload":{"restarts":2}}
+{"at":"2026-08-28T08:04:10.538148Z","event":"EXPERIMENT_INVALIDATED","payload":{"reason":"PREFLIGHT_DATA_INTEGRITY"}}
+{"at":"2026-08-28T08:04:25.019371Z","event":"EXPERIMENT_LOCKED","payload":{"config_hash":"8ca9056be0a9493859f2b247ce389e01ad583e59d0a6a65d2e44df34e34cd943"}}
+{"at":"2026-08-28T08:04:26.096961Z","event":"EXPERIMENT_STARTED","payload":{"id":"PONS_PROSPECTIVE_EXP002_QUAL","start_block":48141944}}
+{"at":"2026-08-28T12:27:15.668307Z","event":"EXPERIMENT_LOCKED","payload":{"config_hash":"19a7f01ced6cc5984087bcda11bf4fb6c43aae1943d1da539fc7e8b7df6d02ea"}}
+{"at":"2026-08-28T13:13:56.912938Z","event":"EXPERIMENT_LOCK_SUPERSEDED","payload":{"id":"PONS_PROSPECTIVE_EXP002","new_config_hash":"243e26394ecc552b9b92c6555d9d6a12c3292c5fb73e1692663cf28c4a2bda47","old_config_hash":"19a7f01ced6cc5984087bcda11bf4fb6c43aae1943d1da539fc7e8b7df6d02ea"}}
+{"at":"2026-08-28T13:13:57.161634Z","event":"EXPERIMENT_LOCKED","payload":{"config_hash":"dbc277bea56fb83ae1d76d96151d06c6fcc4f6912df3bf21df33c9690a1d4483"}}
+{"at":"2026-08-28T13:14:26.608227Z","event":"EXPERIMENT_STARTED","payload":{"id":"PONS_PROSPECTIVE_EXP002_EXITQUAL","start_block":48326448}}
+{"at":"2026-08-28T13:18:26.724719Z","event":"PROCESS_RESTARTED","payload":{"restarts":1}}
+{"at":"2026-08-28T13:37:32.334966Z","event":"EXPERIMENT_LOCK_SUPERSEDED","payload":{"id":"PONS_PROSPECTIVE_EXP002","new_config_hash":"8434d3866e5f8f51c9eba0026854edbd76bb5621649866fb142cce00dce1dc16","old_config_hash":"243e26394ecc552b9b92c6555d9d6a12c3292c5fb73e1692663cf28c4a2bda47"}}
+{"at":"2026-08-28T13:37:33.737852Z","event":"PROCESS_RESTARTED","payload":{"restarts":2}}
+{"at":"2026-08-28T13:54:11.507981Z","event":"EXPERIMENT_LOCK_SUPERSEDED","payload":{"id":"PONS_PROSPECTIVE_EXP002","new_config_hash":"29ffd5ee8284326b540933c5bec35c08c7647b508f5d99380b6ccf856afc0216","old_config_hash":"8434d3866e5f8f51c9eba0026854edbd76bb5621649866fb142cce00dce1dc16"}}
+{"at":"2026-08-28T13:57:05.173903Z","event":"EXPERIMENT_LOCK_SUPERSEDED","payload":{"id":"PONS_PROSPECTIVE_EXP002","new_config_hash":"75acba38efa8736efe758dff4c1d9894e1cb1212cfd679c0e632edc846d208c5","old_config_hash":"29ffd5ee8284326b540933c5bec35c08c7647b508f5d99380b6ccf856afc0216"}}

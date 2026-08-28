@@ -1,0 +1,49 @@
+{
+  "experiment_id": "EXP001",
+  "software_verdict": "PASS",
+  "dataset_verdict": "FEATURE_ONLY",
+  "research_verdict": "EXP001_BLOCKED_DATASET",
+  "hypotheses_tested": 8,
+  "variants_predeclared_max": 84,
+  "variants_evaluated": 0,
+  "validation_slots": 5,
+  "test_runs_allowed": 1,
+  "test_run_count": 0,
+  "dataset": {
+    "dataset_id": "Slinky21/Pumpfun_Memecoin_Corpus",
+    "source_url": "https://huggingface.co/datasets/Slinky21/Pumpfun_Memecoin_Corpus",
+    "source_kind": "DECODED_RESEARCH_CORPUS",
+    "identity_quality": "DERIVED",
+    "license": "CC BY 4.0 (README); HF card also lists MIT",
+    "declared_period_start": "2026-06-05",
+    "declared_period_end": "2026-07-14",
+    "declared_launches": 798430,
+    "declared_trades": 33581765,
+    "declared_graduations": 5689,
+    "feature_valid": true,
+    "execution_valid": false,
+    "quality_status": "HISTORICAL_PARTIAL",
+    "complete": false,
+    "importer_version": "7.1.0",
+    "feature_version": "5.0.0",
+    "dataset_hash": "5ae3cbca393b1556305982a0833adb31b6d8ab83b9ab1709d530341b4cd21b78",
+    "dataset_hash_scope": "local_subset_tokens_migrations_trades00017",
+    "known_gap": "2026-07-03 websocket outage (zero trades); also no launches on 2026-06-18 and 2026-07-12",
+    "spot_check": {
+      "n": 20,
+      "signature_found": 20,
+      "mint_in_account_keys": 20,
+      "rpc": "https://api.mainnet-beta.solana.com"
+    }
+  },
+  "splits": null,
+  "locked_policy": null,
+  "out_of_sample": null,
+  "historical_security": {
+    "unknown_is_not_pass": true,
+    "historically_provable": ["launchpad_provenance_from_corpus_label", "protocol_template_pumpfun"],
+    "requires_archive_state": ["mint_authorities_at_slot", "freeze_authority_at_slot", "token_program_account_owner"],
+    "blocks_research_valid_simulation_when_unknown": true
+  },
+  "notes": "Decoded Hugging Face corpus is FEATURE_ONLY. Do not interpret fixtures or float prices as strategy edge. TEST was not run."
+}

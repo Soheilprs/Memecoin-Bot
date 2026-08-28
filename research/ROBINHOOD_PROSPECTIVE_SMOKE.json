@@ -1,0 +1,97 @@
+{
+  "label": "ROBINHOOD_PROSPECTIVE_SMOKE",
+  "research_valid_for_alpha": false,
+  "headline_pnl": false,
+  "session": {
+    "start": "2026-08-27T17:35:05Z",
+    "restart": "2026-08-27T17:50:43Z",
+    "end": "2026-08-27T18:05:45Z",
+    "duration_wall_s": 1844,
+    "phase_a_s": 900,
+    "phase_b_s": 900,
+    "robinhood_raw_blocks": [47625122, 47643291],
+    "base_raw_blocks": [50531421, 50532246],
+    "planned_restart": true,
+    "reconnects_in_session": 0
+  },
+  "counts": {
+    "TokenLaunched": 570,
+    "CurveBuy": 6205,
+    "CurveSell": 5273,
+    "SnipeTaxCharged": 372,
+    "LaunchSwept": 2,
+    "PoolGraduated": 2,
+    "tokens_discovered_rh": 570,
+    "tokens_discovered_base": 23,
+    "raw_rh": 12797,
+    "raw_base": 46,
+    "trades_rh": 11478,
+    "trades_base": 19,
+    "snapshots_rh": 95737,
+    "snapshots_base": 2988,
+    "feature_vectors_rh": 94622,
+    "feature_vectors_base": 2678,
+    "security_assessments_rh": 570,
+    "security_assessments_base": 23,
+    "security_verdict": {"WARN": 593, "PASS": 0, "REJECT": 0, "UNKNOWN": 0},
+    "candidate_eligible_rh": 249,
+    "paper_orders": 1038,
+    "fills": 0,
+    "partial_fills": 0,
+    "failed_or_unavailable": 1038,
+    "positions_opened": 0,
+    "positions_closed": 0,
+    "positions_still_open": 0,
+    "shadow_orders": 2678
+  },
+  "feature_coverage": {
+    "robinhood": {
+      "T+30": {"eligible": 555, "vectors": 545, "pct": 98.2},
+      "T+60": {"eligible": 545, "vectors": 540, "pct": 99.1},
+      "T+2m": {"eligible": 535, "vectors": 518, "pct": 96.8},
+      "T+5m": {"eligible": 438, "vectors": 434, "pct": 99.1}
+    },
+    "base": {
+      "T+30": {"eligible": 23, "vectors": 23, "pct": 100.0},
+      "T+60": {"eligible": 23, "vectors": 23, "pct": 100.0},
+      "T+2m": {"eligible": 23, "vectors": 23, "pct": 100.0},
+      "T+5m": {"eligible": 17, "vectors": 17, "pct": 100.0}
+    }
+  },
+  "policies": {
+    "PIPELINE_SMOKE_POLICY": {
+      "research_valid_for_alpha": false,
+      "orders": 1038,
+      "fills": 0,
+      "reason_dominant": "UNKNOWN_CURVE_RESERVES"
+    },
+    "P0_FIRST_ELIGIBLE_CONTROL": {"n_obs": 1012, "n_signals": 203, "x2": 34, "x5": 5, "label": "PRELIMINARY_SMALL_SAMPLE"},
+    "P1_SOLANA_BUYERS_3_30S": {"n_obs": 1012, "n_signals": 157, "x2": 34, "x5": 5, "label": "PRELIMINARY_SMALL_SAMPLE"},
+    "P2_SOLANA_BUYERS_PLUS_IMBALANCE": {"n_obs": 1012, "n_signals": 161, "x2": 32, "x5": 5, "label": "PRELIMINARY_SMALL_SAMPLE"},
+    "P3_PRICE_WITHOUT_BUYERS_AVOID": {"n_obs": 1012, "n_signals": 203, "x2": 34, "x5": 5, "label": "PRELIMINARY_SMALL_SAMPLE"},
+    "P4_LOW_PARTICIPATION_FILTER": {"n_obs": 1012, "n_signals": 157, "x2": 34, "x5": 5, "label": "PRELIMINARY_SMALL_SAMPLE"}
+  },
+  "quality": {
+    "DISCOVERY": "COMPLETE",
+    "TRADES": "COMPLETE",
+    "STATE": "COMPLETE",
+    "FEATURES": "COMPLETE",
+    "SECURITY": "PARTIAL",
+    "CANDIDATES": "COMPLETE",
+    "EXECUTION": "MODELLED",
+    "OUTCOMES": "PRELIMINARY"
+  },
+  "wallets": {
+    "unique_rh": 1048,
+    "unique_base": 3,
+    "both": 0,
+    "identity_meaning": "same cryptographic EVM address only"
+  },
+  "live_vs_backfill": {
+    "token_launched_end_window_match_pct": 100.0,
+    "curve_buy_end_window_match_pct": 100.0,
+    "curve_sell_end_window_match_pct": 100.0,
+    "start_window_curve_buy_match_pct": 70.175,
+    "note": "Alchemy free eth_getLogs 10-block cap; first+last 80 blocks sampled. live_only=0. start-window backfill_only buys are unwatched curves at session open."
+  }
+}

@@ -1,0 +1,17 @@
+/target
+.env
+.DS_Store
+*.swp
+__pycache__/
+*.pyc
+.idea/
+.vscode/
+/data/pumpfun/**/*.parquet
+/data/pumpfun/**/*.jsonl
+/data/pumpfun/**/*.jsonl.gz
+/data/pumpfun/**/README.source.md
+/data/pumpfun/**/KNOWN_ISSUES.md
+!/data/pumpfun/**/DATASET_MANIFEST.json
+!/data/pumpfun/**/.gitkeep
+/research/SOLANA_MOONSHOT_FEATURES.jsonl
+/research/SOLANA_MOONSHOT_FEATURES.parquet
